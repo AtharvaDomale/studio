@@ -1,4 +1,4 @@
-import { BrainCircuit, LayoutDashboard } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 
@@ -9,11 +9,17 @@ export function Header() {
         <BrainCircuit className="h-6 w-6 text-primary" />
         <span className="ml-3 text-xl font-bold font-headline text-foreground">TeachAI</span>
       </Link>
-      <nav className="ml-auto">
+      <nav className="ml-auto flex items-center gap-4">
         <Button asChild variant="ghost">
-            <Link href="/dashboard" prefetch={false}>
+            <Link href="/" prefetch={false}>
                 <LayoutDashboard className="mr-2" />
                 Dashboard
+            </Link>
+        </Button>
+        <Button asChild variant="ghost">
+            <Link href="/tools" prefetch={false}>
+                <Wrench className="mr-2" />
+                Tools
             </Link>
         </Button>
       </nav>
