@@ -16,6 +16,15 @@ export interface Student {
     status: 'On Track' | 'Needs Attention' | 'Excelling';
     lastActivityDate: string;
     avatar: string;
+    trend: 'up' | 'down' | 'stable';
+    alerts: {
+        missingAssignments: number;
+        attendanceConcern: boolean;
+        behavioralNote: boolean;
+    };
+    accommodations: string[];
+    lastPositiveNote: string;
+    assessmentHistory: { name: string; score: number }[];
 }
 
 export interface QuizResult {
@@ -26,14 +35,14 @@ export interface QuizResult {
     savedAt: Timestamp;
 }
 
-// Predefined list of mock students
+// Predefined list of mock students with richer data
 const mockStudentsData = [
-    { id: '1', name: 'Alice Johnson', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png' },
-    { id: '2', name: 'Bob Williams', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png' },
-    { id: '3', name: 'Charlie Brown', className: 'Grade 6 Science', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png' },
-    { id: '4', name: 'Diana Prince', className: 'Grade 6 Science', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png' },
-    { id: '5', name: 'Ethan Hunt', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png' },
-    { id: '6', name: 'Fiona Glenanne', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png' },
+    { id: '1', name: 'Alice Johnson', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png', trend: 'up', alerts: { missingAssignments: 0, attendanceConcern: false, behavioralNote: false }, accommodations: ['Extra time on tests'], lastPositiveNote: 'Led her group effectively on 10/26.', assessmentHistory: [{ name: 'Q1', score: 85 }, { name: 'Q2', score: 88 }, { name: 'Q3', score: 92 }] },
+    { id: '2', name: 'Bob Williams', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png', trend: 'down', alerts: { missingAssignments: 3, attendanceConcern: true, behavioralNote: false }, accommodations: ['Preferential seating'], lastPositiveNote: 'Showed great improvement in participation.', assessmentHistory: [{ name: 'Q1', score: 75 }, { name: 'Q2', score: 68 }, { name: 'Q3', score: 62 }] },
+    { id: '3', name: 'Charlie Brown', className: 'Grade 6 Science', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png', trend: 'stable', alerts: { missingAssignments: 1, attendanceConcern: false, behavioralNote: true }, accommodations: [], lastPositiveNote: 'Asked a very insightful question about photosynthesis.', assessmentHistory: [{ name: 'Q1', score: 78 }, { name: 'Q2', score: 80 }, { name: 'Q3', score: 79 }] },
+    { id: '4', name: 'Diana Prince', className: 'Grade 6 Science', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png', trend: 'up', alerts: { missingAssignments: 0, attendanceConcern: false, behavioralNote: false }, accommodations: ['Access to a copy of notes'], lastPositiveNote: 'Helped a peer understand a difficult concept.', assessmentHistory: [{ name: 'Q1', score: 90 }, { name: 'Q2', score: 95 }, { name: 'Q3', score: 98 }] },
+    { id: '5', name: 'Ethan Hunt', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png', trend: 'stable', alerts: { missingAssignments: 0, attendanceConcern: false, behavioralNote: false }, accommodations: [], lastPositiveNote: 'Consistently on task and focused.', assessmentHistory: [{ name: 'Q1', score: 82 }, { name: 'Q2', score: 82 }, { name: 'Q3', score: 83 }] },
+    { id: '6', name: 'Fiona Glenanne', className: 'Grade 5 Math', createdAt: new Date().toISOString(), avatar: 'https://placehold.co/100x100.png', trend: 'down', alerts: { missingAssignments: 2, attendanceConcern: false, behavioralNote: false }, accommodations: [], lastPositiveNote: 'Completed a challenging problem set.', assessmentHistory: [{ name: 'Q1', score: 88 }, { name: 'Q2', score: 82 }, { name: 'Q3', score: 75 }] },
 ];
 
 // In-memory store for quiz results for the demo
@@ -59,8 +68,14 @@ export async function addStudent(name: string, className: string): Promise<strin
         className,
         createdAt: new Date().toISOString(),
         avatar: 'https://placehold.co/100x100.png',
+        trend: 'stable' as const,
+        alerts: { missingAssignments: 0, attendanceConcern: false, behavioralNote: false },
+        accommodations: [],
+        lastPositiveNote: "Newly added student.",
+        assessmentHistory: [],
     };
-    mockStudentsData.push(newStudent);
+    // This is not a type error, it's just how we have to add to a mock in-memory array.
+    (mockStudentsData as any).push(newStudent);
     return newStudent.id;
 }
 
@@ -90,12 +105,12 @@ function calculateMetrics(studentId: string) {
       return acc + (questionCount * 15); // 75%
     }, 0);
 
-    const averageScore = Math.round((totalActualScore / totalPossibleScore) * 100);
+    const averageScore = totalPossibleScore > 0 ? Math.round((totalActualScore / totalPossibleScore) * 100) : 0;
 
     let status: 'On Track' | 'Needs Attention' | 'Excelling' = 'On Track';
-    if (averageScore < 60) {
+    if (averageScore < 70) {
         status = 'Needs Attention';
-    } else if (averageScore > 85) {
+    } else if (averageScore >= 90) {
         status = 'Excelling';
     }
 
@@ -114,10 +129,14 @@ function calculateMetrics(studentId: string) {
 
 export async function getStudents(): Promise<Student[]> {
     console.log("Mock getStudents called.");
-    return mockStudentsData.map(student => ({
-        ...student,
-        ...calculateMetrics(student.id),
-    }));
+    // Combine static and calculated data
+    return mockStudentsData.map(student => {
+        const metrics = calculateMetrics(student.id);
+        return {
+            ...student,
+            ...metrics,
+        };
+    });
 }
 
 export async function saveQuizResult(studentId: string, quizName: string, quizData: any): Promise<string> {

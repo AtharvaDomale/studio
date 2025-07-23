@@ -1,7 +1,7 @@
 
 "use client";
 
-import { addStudent, getStudents, Student } from "@/services/student-service-mock";
+import { getStudents, Student } from "@/services/student-service-mock";
 import { evaluateStudentPerformance } from "@/ai/flows/student-evaluator";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, TrendingUp, TrendingDown, Award, Activity } from "lucide-react";
+import { Loader2, UserPlus, TrendingUp, TrendingDown, Award, Activity, AlertCircle, CalendarDays, BookCheck, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,14 +20,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import ReactMarkdown from 'react-markdown';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList, Line, LineChart } from "recharts";
 import { ChartConfig } from "./ui/chart";
 import { Badge } from "./ui/badge";
-import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Separator } from "./ui/separator";
 
 
 const formSchema = z.object({
@@ -43,6 +45,8 @@ export function StudentDashboard() {
   const [isAdding, setIsAdding] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<{ evaluationSummary: string } | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -82,11 +86,13 @@ export function StudentDashboard() {
     }
   }
 
-  async function handleEvaluate(studentId: string, studentName: string) {
-    setIsEvaluating(studentId);
+  async function handleEvaluate(student: Student) {
+    setSelectedStudent(student);
+    setIsEvaluating(student.id);
+    setIsDialogOpen(true);
     setEvaluation(null);
     try {
-      const result = await evaluateStudentPerformance({ studentId, studentName });
+      const result = await evaluateStudentPerformance({ studentId: student.id, studentName: student.name });
       setEvaluation(result);
     } catch (error) {
       console.error(error);
@@ -99,7 +105,7 @@ export function StudentDashboard() {
   const chartData = students.map(s => ({
     name: s.name.split(' ')[0], // Use first name for chart
     averageScore: s.averageScore,
-    fill: s.averageScore >= 85 ? 'hsl(var(--chart-2))' : s.averageScore >= 60 ? 'hsl(var(--chart-4))' : 'hsl(var(--chart-1))',
+    fill: s.averageScore >= 85 ? 'hsl(var(--chart-2))' : s.averageScore >= 70 ? 'hsl(var(--chart-4))' : 'hsl(var(--chart-1))',
   }));
 
   const chartConfig = {
@@ -108,7 +114,7 @@ export function StudentDashboard() {
     },
   } satisfies ChartConfig;
 
-  const getStatusBadgeVariant = (status: Student['status']) => {
+   const getStatusBadgeVariant = (status: Student['status']) => {
     switch (status) {
         case 'Excelling': return "default";
         case 'On Track': return "secondary";
@@ -127,6 +133,11 @@ export function StudentDashboard() {
     }
   };
 
+  const TrendArrow = ({ trend }: { trend: Student['trend'] }) => {
+    if (trend === 'up') return <ArrowUp className="h-5 w-5 text-green-500" />;
+    if (trend === 'down') return <ArrowDown className="h-5 w-5 text-red-500" />;
+    return <Minus className="h-5 w-5 text-muted-foreground" />;
+  }
 
   return (
     <div className="space-y-8">
@@ -257,50 +268,126 @@ export function StudentDashboard() {
                            </div>
                         </CardContent>
                         <CardFooter>
-                            <Dialog onOpenChange={(open) => !open && setEvaluation(null)}>
-                                <DialogTrigger asChild>
-                                <Button 
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={() => handleEvaluate(student.id, student.name)}
-                                    disabled={isEvaluating === student.id}
-                                >
-                                    {isEvaluating === student.id ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Activity className="mr-2" />
-                                    )}
-                                    Evaluate
-                                </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-2xl">
-                                    <DialogHeader>
-                                        <DialogTitle>Evaluation for {student.name}</DialogTitle>
-                                        <DialogDescription>
-                                        AI-powered performance analysis and recommendations based on quiz history.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="py-4 max-h-[60vh] overflow-y-auto">
-                                        {isEvaluating === student.id ? (
-                                            <div className="flex justify-center items-center h-40">
-                                                <Loader2 className="animate-spin text-primary h-8 w-8" />
-                                            </div>
-                                        ) : evaluation ? (
-                                            <div className="prose dark:prose-invert max-w-none">
-                                                <ReactMarkdown>{evaluation.evaluationSummary}</ReactMarkdown>
-                                            </div>
-                                        ) : (
-                                            <p>No evaluation available. Click evaluate to start.</p>
-                                        )}
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+                            <Button 
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => handleEvaluate(student)}
+                                disabled={isEvaluating === student.id}
+                            >
+                                {isEvaluating === student.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Activity className="mr-2" />
+                                )}
+                                Evaluate
+                            </Button>
                         </CardFooter>
                     </Card>
                 ))}
             </div>
           )}
       </div>
+
+       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+            {selectedStudent ? (
+                <>
+                <DialogHeader className="pr-10">
+                    <div className="flex items-start gap-4">
+                        <Avatar className="h-20 w-20 border-2 border-primary">
+                            <AvatarImage src={selectedStudent.avatar} alt={selectedStudent.name} />
+                            <AvatarFallback>{selectedStudent.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-1">
+                            <DialogTitle className="text-3xl">{selectedStudent.name}</DialogTitle>
+                            <div className="flex items-center gap-4 text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl font-bold text-foreground">{selectedStudent.averageScore}%</span>
+                                    <TrendArrow trend={selectedStudent.trend} />
+                                </div>
+                                <Separator orientation="vertical" className="h-6"/>
+                                <div>
+                                    <span className="font-semibold">{getStatusIcon(selectedStudent.status)} {selectedStudent.status}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2 text-sm text-right">
+                           <p className="font-semibold">Critical Alerts:</p>
+                           <div className="flex flex-col items-end gap-1">
+                                {selectedStudent.alerts.missingAssignments > 0 && <Badge variant="destructive" className="flex items-center gap-1"><AlertCircle size={14} />{selectedStudent.alerts.missingAssignments} Missing Assignments</Badge>}
+                                {selectedStudent.alerts.attendanceConcern && <Badge variant="destructive" className="flex items-center gap-1"><CalendarDays size={14} />Attendance Concern</Badge>}
+                                {selectedStudent.alerts.behavioralNote && <Badge variant="secondary" className="flex items-center gap-1"><BookCheck size={14} />Recent Behavioral Note</Badge>}
+                           </div>
+                        </div>
+                    </div>
+                    <Separator className="my-4" />
+                     <div className="grid grid-cols-2 gap-4 text-left text-sm">
+                        <div>
+                            <p className="font-semibold text-foreground">Accommodations</p>
+                            {selectedStudent.accommodations.length > 0 ? (
+                                <ul className="list-disc pl-5 text-muted-foreground">
+                                    {selectedStudent.accommodations.map(acc => <li key={acc}>{acc}</li>)}
+                                </ul>
+                            ) : (
+                                <p className="text-muted-foreground">None</p>
+                            )}
+                        </div>
+                        <div>
+                            <p className="font-semibold text-foreground">Last Positive Note</p>
+                            <p className="text-muted-foreground italic">&quot;{selectedStudent.lastPositiveNote}&quot;</p>
+                        </div>
+                    </div>
+                </DialogHeader>
+                <div className="flex-grow overflow-y-auto -mx-6 px-6">
+                    <Tabs defaultValue="academics" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="academics">Tier 1: Academics</TabsTrigger>
+                            <TabsTrigger value="behaviors">Tier 2: Behaviors</TabsTrigger>
+                            <TabsTrigger value="history">Tier 3: History</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="academics" className="pt-4">
+                            <h3 className="font-semibold mb-2">AI-Generated Performance Analysis</h3>
+                            {isEvaluating === selectedStudent.id ? (
+                                <div className="flex justify-center items-center h-40">
+                                    <Loader2 className="animate-spin text-primary h-8 w-8" />
+                                </div>
+                            ) : evaluation ? (
+                                <div className="prose dark:prose-invert max-w-none text-sm">
+                                    <ReactMarkdown>{evaluation.evaluationSummary}</ReactMarkdown>
+                                </div>
+                            ) : (
+                                <p>No evaluation available. Click evaluate to start.</p>
+                            )}
+                             <Separator className="my-6" />
+                             <h3 className="font-semibold mb-4">Assessment Trend</h3>
+                             <div className="h-64 w-full">
+                                <ChartContainer config={{score: {label: "Score", color: "hsl(var(--primary))"}}} className="h-full w-full">
+                                    <LineChart data={selectedStudent.assessmentHistory} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                                        <YAxis domain={[0, 100]} tickLine={false} axisLine={false} tickMargin={8} />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} dot={{fill: "hsl(var(--primary))"}} activeDot={{r: 6}} />
+                                    </LineChart>
+                                </ChartContainer>
+                             </div>
+                        </TabsContent>
+                        <TabsContent value="behaviors">
+                           <p className="text-muted-foreground text-center py-10">Behavior tracking features are coming soon.</p>
+                        </TabsContent>
+                        <TabsContent value="history">
+                             <p className="text-muted-foreground text-center py-10">Communication and history log features are coming soon.</p>
+                        </TabsContent>
+                    </Tabs>
+                </div>
+                </>
+            ) : (
+                <div className="flex justify-center items-center h-full">
+                    <Loader2 className="animate-spin text-primary h-12 w-12" />
+                </div>
+            )}
+          </DialogContent>
+       </Dialog>
     </div>
   );
 }

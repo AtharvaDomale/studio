@@ -73,10 +73,10 @@ const studentEvaluatorFlow = ai.defineFlow(
     ---
 
     Based on this data, please provide a detailed evaluation that includes:
-    1.  **Overall Performance Summary**: A brief overview of how the student is doing.
-    2.  **Identified Strengths**: Specific topics or question types where the student excels.
-    3.  **Areas for Improvement**: Specific topics or concepts where the student seems to be struggling.
-    4.  **Actionable Recommendations**: Suggest concrete next steps, learning strategies, or resources to help the student improve.
+    1.  **Overall Performance Summary**: A brief, paragraph-long overview of how the student is doing academically based on the quiz data.
+    2.  **Identified Strengths**: Using a bulleted list, mention 2-3 specific topics or question types where the student excels.
+    3.  **Areas for Improvement**: Using a bulleted list, mention 2-3 specific topics or concepts where the student seems to be struggling.
+    4.  **Actionable Recommendations**: Provide a numbered list of 2-3 concrete next steps, learning strategies, or resources to help the student improve.
 
     Please format the entire output as a clean, readable document. Use Markdown headings (e.g., ###), lists, and bold text for structure. Do NOT use markdown code blocks (\`\`\`). Be encouraging and constructive in your tone.`;
 
