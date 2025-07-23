@@ -34,7 +34,9 @@ const generateQuizPrompt = ai.definePrompt({
   prompt: `You are an AI quiz generator designed to create quizzes for teachers.
 
   Based on the topic and grade level provided, generate a quiz with the specified number of questions.
-  The quiz should be formatted in JSON.
+  The quiz MUST be formatted in a valid JSON structure.
+  The JSON object should have a single key "questions" which is an array of question objects.
+  Each question object should have three keys: "question" (string), "options" (array of strings), and "answer" (string).
 
   Topic: {{{topic}}}
   Grade Level: {{{gradeLevel}}}
