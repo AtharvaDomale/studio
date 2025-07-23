@@ -121,7 +121,7 @@ const animatedStorybookFlow = ai.defineFlow(
     const { media: characterSheetImage } = await ai.generate({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt: storyAnalysis.characterSheetPrompt,
-        config: { responseModalities: ['IMAGE'] },
+        config: { responseModalities: ['TEXT', 'IMAGE'] },
     });
     const characterSheetDataUri = characterSheetImage?.url;
     if (!characterSheetDataUri) {
