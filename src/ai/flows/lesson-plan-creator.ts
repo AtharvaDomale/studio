@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -23,7 +24,7 @@ export type LessonPlanCreatorInput = z.infer<typeof LessonPlanCreatorInputSchema
 
 const LessonPlanCreatorOutputSchema = z.object({
   lessonPlan: z.string().describe('The complete, synthesized lesson plan in Markdown format.'),
-  imageUrl: z.string().url().describe('A relevant image URL for the lesson.'),
+  imageUrl: z.string().describe('A relevant image URL for the lesson.'),
 });
 export type LessonPlanCreatorOutput = z.infer<typeof LessonPlanCreatorOutputSchema>;
 
@@ -61,12 +62,6 @@ const lessonPlanCreatorFlow = ai.defineFlow(
       }),
     ]);
     
-    // Extract the quiz questions text
-    const quizData = JSON.parse(quizResponse.quiz);
-    const quizText = quizData.questions
-    .map((q: any, i: number) => `${i + 1}. ${q.question}\nOptions: ${q.options.join(', ')}\nAnswer: ${q.answer}`)
-    .join('\n\n');
-    
     const imageUrl = imageResponse.steps[0]?.imageUrl || '';
 
     // Step 2: Synthesize the results into a comprehensive lesson plan
@@ -83,15 +78,15 @@ const lessonPlanCreatorFlow = ai.defineFlow(
     1.  **Suggested Teaching Methods & Activities:**
         ${methodsResponse.teachingMethods}
 
-    2.  **Generated Assessment Quiz:**
-        ${quizText}
+    2.  **Generated Assessment Quiz (in JSON format):**
+        ${quizResponse.quiz}
 
     Please create a lesson plan that includes:
     - A clear title.
     - Learning objectives.
     - A list of materials (mentioning the generated image).
     - A step-by-step procedure for the lesson, incorporating the suggested activities.
-    - The assessment quiz you've created.
+    - The assessment quiz you've received. Please reformat the quiz from JSON into a readable list of questions with options and clearly mark the correct answer.
     - A concluding summary.
 
     Format the entire output as a clean, readable Markdown document.`;
