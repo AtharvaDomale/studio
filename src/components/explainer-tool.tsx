@@ -1,3 +1,4 @@
+
 "use client";
 import { teachingMethodExplainer } from "@/ai/flows/teaching-method-explainer";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OutputActions } from "./output-actions";
 import Image from "next/image";
+import ReactMarkdown from 'react-markdown';
 
 const formSchema = z.object({
   content: z.string().min(10, { message: "Content must be at least 10 characters." }),
@@ -155,12 +157,11 @@ export function ExplainerTool() {
         </Form>
       </CardContent>
       {result && (
-        <CardFooter className="flex-col items-start gap-4">
-          <div className="w-full p-4 border rounded-lg bg-muted">
-            <h3 className="font-semibold mb-2 text-lg">Suggested Teaching Methods:</h3>
-            <div className="whitespace-pre-wrap">{result}</div>
-          </div>
-          <OutputActions content={result} />
+        <CardFooter className="flex-col items-start w-full gap-4">
+            <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground prose-li:text-foreground dark:prose-invert p-4 border rounded-lg bg-muted w-full">
+                <ReactMarkdown>{result}</ReactMarkdown>
+            </div>
+            <OutputActions content={result} />
         </CardFooter>
       )}
     </>
