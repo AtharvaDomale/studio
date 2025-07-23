@@ -110,7 +110,7 @@ const assistantFlow = ai.defineFlow(
                 llmResponse.message, // Include the AI's first message (the tool request)
                 { role: 'tool', content: [toolResult] },
             ],
-            prompt: 'Please summarize the result of the tool I just used.',
+            prompt: 'The user asked me to perform an action, and I used a tool that returned the following data. Please present this data back to the user in a clear, readable, and well-formatted way. Do not just say what you did; show the result. If the data is a list, format it as such. If it is an error, explain the error clearly.',
         });
         return { response: finalResponse.text };
     }
@@ -121,3 +121,4 @@ const assistantFlow = ai.defineFlow(
     };
   }
 );
+
