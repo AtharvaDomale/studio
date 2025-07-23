@@ -61,7 +61,7 @@ const firebaseTool = ai.defineTool(
     async (input) => {
       // This is a pass-through to the native MCP tool.
       // Genkit will route this to the 'firebase' MCP server defined in .idx/mcp.json
-      return await ai.run(input.method, input.params);
+      return input;
     }
 );
 
