@@ -12,6 +12,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { MediaPart } from 'genkit';
+import { run } from 'genkit/node';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -51,7 +52,7 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
 const firebaseTool = ai.defineTool(
     {
       name: 'firebase',
-      description: 'Interacts with the user\'s Firebase project. Use this tool to manage and query data in Firestore, Authentication, and other Firebase services.',
+      description: 'Interacts with the user\'s Firebase project. Use this to manage and query data in Firestore, Authentication, and other Firebase services.',
       inputSchema: z.object({
         method: z.string().describe('The Firebase MCP method to call (e.g., "firestore_query_collection", "auth_list_users").'),
         params: z.any().describe('An object containing the parameters for the specified method.'),
@@ -59,16 +60,12 @@ const firebaseTool = ai.defineTool(
       outputSchema: z.any(),
     },
     async (input) => {
-        // In a real application, this would make a call to the Firebase MCP server.
-        // For this prototype, we will simulate the behavior based on the method.
-        console.log(`SIMULATING: Calling Firebase MCP method "${input.method}" with params:`, input.params);
-        if (input.method === 'auth_list_users') {
-            return { result: "Simulated list of users: user1@example.com, user2@example.com" };
-        }
-        if (input.method === 'firestore_list_collections') {
-            return { result: "Simulated collections: 'students', 'quizResults'" };
-        }
-        return { result: `Successfully called method ${input.method}.` };
+      // This makes a real call to the Firebase MCP server.
+      const result = await run('firebase', {
+        method: input.method,
+        params: input.params,
+      });
+      return result;
     }
 );
 
