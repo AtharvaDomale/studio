@@ -9,7 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import {z, genkit} from 'genkit';
+import {z} from 'genkit';
 import wav from 'wav';
 import {MediaPart} from 'genkit';
 
@@ -169,8 +169,26 @@ export async function generateCharacterSheet(input: CharacterSheetInput): Promis
     return { characterSheetDataUri };
 };
 
-// Define a separate AI object for the concept image generation to avoid conflicts
-const aiImage = genkit({
-    plugins: [googleAI()],
-    model: 'googleai/gemini-2.0-flash-preview-image-generation'
+// Separate flow for generating concept images
+const ConceptImageInputSchema = z.object({
+    prompt: z.string(),
 });
+export type ConceptImageInput = z.infer<typeof ConceptImageInputSchema>;
+
+const ConceptImageOutputSchema = z.object({
+    imageUrl: z.string(),
+});
+export type ConceptImageOutput = z.infer<typeof ConceptImageOutputSchema>;
+
+export async function generateConceptImage(input: ConceptImageInput): Promise<ConceptImageOutput> {
+    const { media } = await ai.generate({
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: input.prompt,
+        config: { responseModalities: ['TEXT', 'IMAGE'] },
+    });
+    const imageUrl = media?.url;
+    if (!imageUrl) {
+        throw new Error("Image generation returned no media.");
+    }
+    return { imageUrl };
+}

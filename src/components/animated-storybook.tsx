@@ -2,7 +2,7 @@
 "use client";
 
 import { analyzeStory, StoryAnalysis } from "@/ai/flows/story-analyzer";
-import { generateScene, SceneOutput, generateCharacterSheet } from "@/ai/flows/scene-generator";
+import { generateScene, SceneOutput, generateCharacterSheet, generateConceptImage } from "@/ai/flows/scene-generator";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,7 +18,6 @@ import { Skeleton } from "./ui/skeleton";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import React from "react";
 import Image from "next/image";
-import { conceptImageGenerator } from "@/ai/flows/concept-image-generator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 const formSchema = z.object({
@@ -79,7 +78,7 @@ export function AnimatedStorybook() {
 
     return () => {
         carouselApi.off("select", onSelect);
-        carouselApi.off("reInit", on-select);
+        carouselApi.off("reInit", onSelect);
     };
   }, [carouselApi]);
 
@@ -167,12 +166,7 @@ export function AnimatedStorybook() {
       for (let i = 0; i < conceptData.length; i++) {
           setKeyConcepts(prev => prev.map((kc, idx) => idx === i ? { ...kc, status: 'loading' } : kc));
           try {
-              const { media } = await ai.generate({
-                  model: 'googleai/gemini-2.0-flash-preview-image-generation',
-                  prompt: conceptData[i].visualPrompt,
-                  config: { responseModalities: ['TEXT', 'IMAGE'] },
-              });
-              const imageUrl = media?.url;
+              const { imageUrl } = await generateConceptImage({ prompt: conceptData[i].visualPrompt });
               if (!imageUrl) throw new Error("Image generation returned no media.");
               setKeyConcepts(prev => prev.map((kc, idx) => idx === i ? { ...kc, status: 'done', imageUrl } : kc));
           } catch (error) {
