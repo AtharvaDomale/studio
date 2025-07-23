@@ -99,6 +99,23 @@ const assistantFlow = ai.defineFlow(
       Do not ask clarifying questions; use the information provided to call the tool or state that you cannot.`,
     });
 
+    const toolResponse = llmResponse.toolRequest;
+    if (toolResponse) {
+        // If the AI requested a tool, we don't have a text response yet.
+        // We need to process the tool's output and feed it back to the AI.
+        const toolResult = await toolResponse.output();
+        const finalResponse = await ai.generate({
+            history: [
+                ...input.history,
+                llmResponse.message, // Include the AI's first message (the tool request)
+                { role: 'tool', content: [toolResult] },
+            ],
+            prompt: 'Please summarize the result of the tool I just used.',
+        });
+        return { response: finalResponse.text };
+    }
+
+
     return {
       response: llmResponse.text,
     };
