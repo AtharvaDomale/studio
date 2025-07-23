@@ -1,3 +1,4 @@
+
 "use client";
 import { generateWeeklyPlan } from "@/ai/flows/weekly-teaching-planner";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import ReactMarkdown from 'react-markdown';
+import { Skeleton } from "./ui/skeleton";
 
 const formSchema = z.object({
   teachingGoals: z.string().min(10, { message: "Teaching goals must be at least 10 characters." }),
@@ -85,10 +87,24 @@ export function WeeklyPlanner() {
           </form>
         </Form>
       </CardContent>
-      {result && (
+      {(isLoading || result) && (
         <CardFooter>
-          <div className="w-full p-4 border rounded-lg bg-muted prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground">
-            <ReactMarkdown>{result}</ReactMarkdown>
+          <div className="w-full p-4 border rounded-lg bg-muted">
+            {isLoading ? (
+                <div className="space-y-4">
+                    <Skeleton className="w-1/3 h-8" />
+                    <Skeleton className="w-full h-4" />
+                    <Skeleton className="w-4/5 h-4" />
+                    <Skeleton className="w-full h-4" />
+                    <Skeleton className="w-2/3 h-4" />
+                </div>
+            ) : (
+                result && (
+                  <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground prose-li:text-foreground">
+                    <ReactMarkdown>{result}</ReactMarkdown>
+                  </div>
+                )
+            )}
           </div>
         </CardFooter>
       )}
