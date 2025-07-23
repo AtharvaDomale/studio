@@ -24,6 +24,7 @@ const formSchema = z.object({
   duration: z.number().min(5).max(8).default(5),
   aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
   image: z.string().optional(),
+  model: z.string().default('veo-2.0-generate-001'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,6 +43,7 @@ export function VideoGenerator() {
       subject: "",
       duration: 5,
       aspectRatio: "16:9",
+      model: "veo-2.0-generate-001",
     },
   });
 
@@ -138,6 +140,37 @@ export function VideoGenerator() {
                     )}
                 />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Generation Model</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex items-center space-x-4"
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="veo-2.0-generate-001" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Veo 2.0</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="veo-3.0-generate-preview" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Veo 3.0 (Experimental)</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <FormField

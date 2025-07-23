@@ -22,6 +22,7 @@ const ConceptVideoGeneratorInputSchema = z.object({
   image: z.string().optional().describe(
     "An optional starting image for the video, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
+  model: z.string().describe("The video generation model to use."),
 });
 export type ConceptVideoGeneratorInput = z.infer<typeof ConceptVideoGeneratorInputSchema>;
 
@@ -75,7 +76,7 @@ const conceptVideoGeneratorFlow = ai.defineFlow(
     }
 
     let {operation} = await ai.generate({
-        model: googleAI.model('veo-2.0-generate-001'),
+        model: googleAI.model(input.model as any),
         prompt: videoPrompt,
         config: {
             durationSeconds: input.duration,
