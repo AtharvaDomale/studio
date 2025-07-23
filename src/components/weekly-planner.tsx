@@ -88,7 +88,7 @@ export function WeeklyPlanner() {
         <CardFooter>
           <div className="w-full p-4 border rounded-lg bg-muted">
             <h3 className="font-semibold mb-2 text-lg">Generated Weekly Plan:</h3>
-            <pre className="whitespace-pre-wrap font-sans text-sm">{result}</pre>
+            <div className="whitespace-pre-wrap font-sans text-sm">{result}</div>
           </div>
         </CardFooter>
       )}

@@ -26,7 +26,7 @@ export type WeeklyTeachingPlanInput = z.infer<typeof WeeklyTeachingPlanInputSche
 const WeeklyTeachingPlanOutputSchema = z.object({
   weeklyPlan: z
     .string()
-    .describe('A detailed weekly teaching plan, including daily activities, assignments, and assessments.'),
+    .describe('A detailed weekly teaching plan, including daily activities, assignments, and assessments, in a readable format.'),
 });
 export type WeeklyTeachingPlanOutput = z.infer<typeof WeeklyTeachingPlanOutputSchema>;
 
@@ -42,13 +42,15 @@ const prompt = ai.definePrompt({
   output: {schema: WeeklyTeachingPlanOutputSchema},
   prompt: `You are an AI assistant designed to help teachers create weekly teaching plans.
 
-  Based on the provided teaching goals and constraints, generate a detailed weekly plan that optimizes time and resources.
+  Based on the provided teaching goals and constraints, generate a detailed weekly plan that optimizes time and resources. 
+  
+  The output should be a well-structured and human-readable plan, not a JSON object. Use markdown for formatting if needed.
 
   Teaching Goals: {{{teachingGoals}}}
   Constraints: {{{constraints}}}
 
   Weekly Plan:
-  `, // Ensure a newline at the end
+  `,
 });
 
 const weeklyTeachingPlanFlow = ai.defineFlow(
