@@ -8,16 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { FileImage, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OutputActions } from "./output-actions";
+import Image from "next/image";
 
 const formSchema = z.object({
   content: z.string().min(10, { message: "Content must be at least 10 characters." }),
   grade: z.string({ required_error: "Please select a grade level." }),
   subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
+  image: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -26,11 +28,26 @@ export function ExplainerTool() {
   const [result, setResult] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { content: "", subject: "" },
   });
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        form.setValue("image", dataUrl);
+        setPreviewImage(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
@@ -105,6 +122,31 @@ export function ExplainerTool() {
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="image"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Optional Image</FormLabel>
+                  <FormControl>
+                      <div className="flex items-center gap-4">
+                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                              <FileImage className="mr-2" /> Upload Image
+                          </Button>
+                          <Input 
+                              type="file" 
+                              ref={fileInputRef} 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleImageChange} 
+                          />
+                          {previewImage && <Image src={previewImage} alt="Preview" width={48} height={48} className="rounded-md object-cover" />}
+                      </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate Explanation

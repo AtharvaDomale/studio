@@ -9,16 +9,19 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle, FileImage, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OutputActions } from "./output-actions";
+import { Input } from "./ui/input";
+import Image from "next/image";
 
 const formSchema = z.object({
   topic: z.string().min(10, { message: "Topic must be at least 10 characters." }),
   gradeLevel: z.string({ required_error: "Please select a grade level." }),
   numberOfQuestions: z.number().min(1).max(10).default(5),
+  image: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -37,11 +40,27 @@ export function StudentAssessor() {
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { topic: "", numberOfQuestions: 5 },
   });
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        form.setValue("image", dataUrl);
+        setPreviewImage(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
@@ -125,6 +144,31 @@ export function StudentAssessor() {
                 )}
               />
             </div>
+             <FormField
+              control={form.control}
+              name="image"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Optional Image</FormLabel>
+                  <FormControl>
+                      <div className="flex items-center gap-4">
+                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                              <FileImage className="mr-2" /> Upload Image
+                          </Button>
+                          <Input 
+                              type="file" 
+                              ref={fileInputRef} 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleImageChange} 
+                          />
+                          {previewImage && <Image src={previewImage} alt="Preview" width={48} height={48} className="rounded-md object-cover" />}
+                      </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate Quiz

@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -14,11 +13,16 @@ import { z } from 'genkit';
 import { teachingMethodExplainer } from './teaching-method-explainer';
 import { generateQuiz } from './student-quiz-generator';
 import { conceptImageGenerator } from './concept-image-generator';
+import { MediaPart } from 'genkit';
+
 
 const LessonPlanCreatorInputSchema = z.object({
   topic: z.string().describe('The central topic for the lesson plan.'),
   grade: z.string().describe('The grade level of the students.'),
   subject: z.string().describe('The subject of the lesson.'),
+  image: z.string().optional().describe(
+    "An optional image for context, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+  ),
 });
 export type LessonPlanCreatorInput = z.infer<typeof LessonPlanCreatorInputSchema>;
 
@@ -49,11 +53,13 @@ const lessonPlanCreatorFlow = ai.defineFlow(
         content: input.topic,
         grade: input.grade,
         subject: input.subject,
+        image: input.image,
       }),
       generateQuiz({
         topic: input.topic,
         gradeLevel: input.grade,
         numberOfQuestions: 3,
+        image: input.image,
       }),
       conceptImageGenerator({
         conceptDescription: input.topic,
@@ -66,8 +72,9 @@ const lessonPlanCreatorFlow = ai.defineFlow(
 
     // Step 2: Synthesize the results into a comprehensive lesson plan
     console.log('Synthesizing results from all agents...');
-    const synthesisPrompt = `You are a master educator responsible for creating a final, comprehensive lesson plan.
+    const synthesisPromptText = `You are a master educator responsible for creating a final, comprehensive lesson plan.
     You have received input from several specialized AI agents. Your task is to synthesize this information into a single, cohesive, and well-structured lesson plan document in Markdown format.
+    If an image was provided as part of the input, make sure to incorporate it into the lesson plan, for example by creating activities or discussion points around it.
 
     Topic: ${input.topic}
     Grade Level: ${input.grade}
@@ -84,15 +91,20 @@ const lessonPlanCreatorFlow = ai.defineFlow(
     Please create a lesson plan that includes:
     - A clear title.
     - Learning objectives.
-    - A list of materials (mentioning the generated image).
+    - A list of materials (mentioning the generated image and the user-provided image if applicable).
     - A step-by-step procedure for the lesson, incorporating the suggested activities.
     - The assessment quiz you've received. Please reformat the quiz from JSON into a readable list of questions with options and clearly mark the correct answer.
     - A concluding summary.
 
     Format the entire output as a clean, readable Markdown document.`;
 
+    const prompt: (string | MediaPart)[] = [{ text: synthesisPromptText }];
+    if (input.image) {
+      prompt.push({ media: { url: input.image }});
+    }
+
     const synthesisResponse = await ai.generate({
-      prompt: synthesisPrompt,
+      prompt: prompt,
     });
 
     return {
