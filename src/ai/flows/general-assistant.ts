@@ -59,12 +59,9 @@ const firebaseTool = ai.defineTool(
       outputSchema: z.any(),
     },
     async (input) => {
-      // This makes a real call to the Firebase MCP server.
-      const result = await ai.run('firebase', {
-        method: input.method,
-        params: input.params,
-      });
-      return result;
+      // This is a pass-through to the native MCP tool.
+      // Genkit will route this to the 'firebase' MCP server defined in .idx/mcp.json
+      return await ai.run(input.method, input.params);
     }
 );
 
@@ -91,6 +88,9 @@ const assistantFlow = ai.defineFlow(
       system: `You are a helpful teacher's assistant AI, integrated directly with this user's Firebase project.
       Your primary job is to help teachers with their daily administrative and data management tasks by using the 'firebase' tool you have available.
       You can query Firestore, manage Auth users, and perform other Firebase-related tasks.
+
+      When the user asks you to perform an action, you must use the 'firebase' tool.
+      You need to determine the correct 'method' to call from the user's request. For example, if the user asks "how many users are in my project?", you should call the 'firebase' tool with the method set to 'auth_list_users'.
 
       If the user provides an image, your primary task is to analyze it. If it contains text, extract and format the text. If it is an image without text, describe it.
       When asked to perform an action related to Firebase, use the 'firebase' tool.
