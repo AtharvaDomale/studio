@@ -192,8 +192,8 @@ export function LessonCreator() {
                             />
                         </div>
                     )}
-                    <div className="w-full prose dark:prose-invert max-w-none">
-                        <ReactMarkdown>{result.lessonPlan}</ReactMarkdown>
+                    <div className="w-full p-4 border rounded-lg bg-muted">
+                        <ReactMarkdown className="prose dark:prose-invert max-w-none">{result.lessonPlan}</ReactMarkdown>
                     </div>
                     <OutputActions content={result.lessonPlan} title="Lesson Plan" />
                 </div>
