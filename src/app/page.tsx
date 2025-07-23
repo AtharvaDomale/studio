@@ -1,5 +1,5 @@
 
-import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard } from 'lucide-react';
+import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard, LayoutDashboard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ExplainerTool } from '@/components/explainer-tool';
@@ -18,7 +18,7 @@ export default function Home() {
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <Tabs defaultValue="lesson-creator" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-8 mb-4 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-9 mb-4 h-auto">
             <TabsTrigger value="lesson-creator" className="flex-col sm:flex-row py-2">
               <Users className="mb-1 sm:mb-0 sm:mr-2" /> Lesson Creator
             </TabsTrigger>

@@ -1,3 +1,4 @@
+
 "use client";
 import { generateQuiz } from "@/ai/flows/student-quiz-generator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -9,13 +10,14 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle, FileImage, Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { CheckCircle, FileImage, Loader2, Save } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OutputActions } from "./output-actions";
 import { Input } from "./ui/input";
 import Image from "next/image";
+import { getStudents, saveQuizResult, Student } from "@/services/student-service";
 
 const formSchema = z.object({
   topic: z.string().min(10, { message: "Topic must be at least 10 characters." }),
@@ -39,9 +41,25 @@ interface QuizData {
 export function StudentAssessor() {
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+
+  useEffect(() => {
+    async function loadStudents() {
+      try {
+        const studentList = await getStudents();
+        setStudents(studentList);
+      } catch (error) {
+        console.error("Failed to fetch students", error);
+        toast({ title: "Error", description: "Could not load student list."});
+      }
+    }
+    loadStudents();
+  }, [toast]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -78,6 +96,30 @@ export function StudentAssessor() {
       });
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleSaveResult() {
+    if (!selectedStudent) {
+        toast({ title: "Error", description: "Please select a student to save the result.", variant: "destructive" });
+        return;
+    }
+    if (!quiz) return;
+
+    setIsSaving(true);
+    try {
+        const student = students.find(s => s.id === selectedStudent);
+        if (!student) throw new Error("Student not found");
+
+        const quizName = form.getValues("topic");
+
+        await saveQuizResult(student.id, quizName, quiz);
+        toast({ title: "Success", description: `Quiz result saved for ${student.name}.` });
+    } catch (error) {
+        console.error("Failed to save quiz result", error);
+        toast({ title: "Error", description: "Could not save the quiz result.", variant: "destructive" });
+    } finally {
+        setIsSaving(false);
     }
   }
 
@@ -197,6 +239,26 @@ export function StudentAssessor() {
                 </AccordionItem>
               ))}
             </Accordion>
+          </div>
+          <div className="w-full space-y-4 pt-4 border-t">
+              <h3 className="text-md font-semibold">Save Quiz Result</h3>
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                  <Select onValueChange={setSelectedStudent} value={selectedStudent}>
+                      <SelectTrigger className="w-full md:w-[250px]">
+                          <SelectValue placeholder="Select a student..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {students.map(student => (
+                              <SelectItem key={student.id} value={student.id}>{student.name} - {student.className}</SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+                  <Button onClick={handleSaveResult} disabled={isSaving || !selectedStudent}>
+                      {isSaving && <Loader2 className="mr-2 animate-spin" />}
+                      <Save className="mr-2" />
+                      Save Result for Student
+                  </Button>
+              </div>
           </div>
           <OutputActions content={printableContent} title="Quiz" />
         </CardFooter>
