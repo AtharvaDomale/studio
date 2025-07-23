@@ -8,19 +8,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Loader2, UserPlus, TrendingUp, TrendingDown, Award, Activity } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +26,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList } from "recharts";
 import { ChartConfig } from "./ui/chart";
 import { Badge } from "./ui/badge";
+import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 
 const formSchema = z.object({
@@ -105,7 +99,7 @@ export function StudentDashboard() {
   const chartData = students.map(s => ({
     name: s.name.split(' ')[0], // Use first name for chart
     averageScore: s.averageScore,
-    fill: s.averageScore >= 80 ? 'hsl(var(--chart-2))' : s.averageScore >= 60 ? 'hsl(var(--chart-4))' : 'hsl(var(--chart-1))',
+    fill: s.averageScore >= 85 ? 'hsl(var(--chart-2))' : s.averageScore >= 60 ? 'hsl(var(--chart-4))' : 'hsl(var(--chart-1))',
   }));
 
   const chartConfig = {
@@ -114,11 +108,25 @@ export function StudentDashboard() {
     },
   } satisfies ChartConfig;
 
-  const getScoreBadgeVariant = (score: number) => {
-    if (score >= 80) return "default";
-    if (score >= 60) return "secondary";
-    return "destructive";
+  const getStatusBadgeVariant = (status: Student['status']) => {
+    switch (status) {
+        case 'Excelling': return "default";
+        case 'On Track': return "secondary";
+        case 'Needs Attention': return "destructive";
+    }
   }
+
+   const getStatusIcon = (status: Student['status']) => {
+    switch (status) {
+      case 'Excelling':
+        return <Award className="h-4 w-4 text-green-500" />;
+      case 'On Track':
+        return <TrendingUp className="h-4 w-4 text-blue-500" />;
+      case 'Needs Attention':
+        return <TrendingDown className="h-4 w-4 text-red-500" />;
+    }
+  };
+
 
   return (
     <div className="space-y-8">
@@ -154,6 +162,7 @@ export function StudentDashboard() {
                     offset={12}
                     className="fill-foreground"
                     fontSize={12}
+                    formatter={(value: number) => `${value}%`}
                   />
                 </Bar>
               </BarChart>
@@ -204,81 +213,95 @@ export function StudentDashboard() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Student Roster</CardTitle>
-          <CardDescription>View and evaluate your students.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Student Roster</h2>
+            <p className="text-muted-foreground">View and evaluate your students.</p>
+          </div>
+        </div>
           {isLoading ? (
             <div className="flex justify-center items-center h-48">
-              <Loader2 className="animate-spin text-primary" />
+              <Loader2 className="animate-spin text-primary h-8 w-8" />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead className="text-center">Quizzes Completed</TableHead>
-                  <TableHead className="text-center">Average Score</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {students.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.className}</TableCell>
-                    <TableCell className="text-center">{student.quizzesCompleted}</TableCell>
-                    <TableCell className="text-center">
-                        <Badge variant={getScoreBadgeVariant(student.averageScore)}>
-                            {student.averageScore > 0 ? `${student.averageScore}%` : 'N/A'}
-                        </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                       <Dialog onOpenChange={(open) => !open && setEvaluation(null)}>
-                        <DialogTrigger asChild>
-                           <Button 
-                             variant="outline"
-                             size="sm"
-                             onClick={() => handleEvaluate(student.id, student.name)}
-                             disabled={isEvaluating === student.id}
-                           >
-                             {isEvaluating === student.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                             Evaluate
-                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Evaluation for {student.name}</DialogTitle>
-                            <DialogDescription>
-                              AI-powered performance analysis and recommendations.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="py-4 max-h-[60vh] overflow-y-auto">
-                            {isEvaluating === student.id ? (
-                                <div className="flex justify-center items-center h-40">
-                                    <Loader2 className="animate-spin text-primary h-8 w-8" />
-                                </div>
-                            ) : evaluation ? (
-                                <div className="prose dark:prose-invert max-w-none">
-                                    <ReactMarkdown>{evaluation.evaluationSummary}</ReactMarkdown>
-                                </div>
-                            ) : (
-                                <p>No evaluation available. Click evaluate to start.</p>
-                            )}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
+                    <Card key={student.id} className="flex flex-col">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                           <Avatar className="h-16 w-16">
+                             <AvatarImage src={student.avatar} alt={student.name} data-ai-hint="person student" />
+                             <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                           </Avatar>
+                           <div>
+                             <CardTitle>{student.name}</CardTitle>
+                             <CardDescription>{student.className}</CardDescription>
+                             <Badge variant={getStatusBadgeVariant(student.status)} className="mt-2">
+                               {getStatusIcon(student.status)}
+                               {student.status}
+                             </Badge>
+                           </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                           <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Avg. Score</span>
+                                <span className="font-semibold">{student.averageScore > 0 ? `${student.averageScore}%` : 'N/A'}</span>
+                           </div>
+                           <div className="flex justify-between items-center text-sm mt-2">
+                                <span className="text-muted-foreground">Quizzes</span>
+                                <span className="font-semibold">{student.quizzesCompleted}</span>
+                           </div>
+                            <div className="flex justify-between items-center text-sm mt-2">
+                                <span className="text-muted-foreground">Last Activity</span>
+                                <span className="font-semibold">{student.lastActivityDate}</span>
+                           </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Dialog onOpenChange={(open) => !open && setEvaluation(null)}>
+                                <DialogTrigger asChild>
+                                <Button 
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => handleEvaluate(student.id, student.name)}
+                                    disabled={isEvaluating === student.id}
+                                >
+                                    {isEvaluating === student.id ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Activity className="mr-2" />
+                                    )}
+                                    Evaluate
+                                </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Evaluation for {student.name}</DialogTitle>
+                                        <DialogDescription>
+                                        AI-powered performance analysis and recommendations based on quiz history.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="py-4 max-h-[60vh] overflow-y-auto">
+                                        {isEvaluating === student.id ? (
+                                            <div className="flex justify-center items-center h-40">
+                                                <Loader2 className="animate-spin text-primary h-8 w-8" />
+                                            </div>
+                                        ) : evaluation ? (
+                                            <div className="prose dark:prose-invert max-w-none">
+                                                <ReactMarkdown>{evaluation.evaluationSummary}</ReactMarkdown>
+                                            </div>
+                                        ) : (
+                                            <p>No evaluation available. Click evaluate to start.</p>
+                                        )}
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </CardFooter>
+                    </Card>
                 ))}
-              </TableBody>
-            </Table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }
+
