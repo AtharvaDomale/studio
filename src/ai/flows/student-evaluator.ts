@@ -38,7 +38,9 @@ function formatQuizHistory(quizHistory: QuizResult[]): string {
 
     return quizHistory
         .map(result => {
-            const date = result.savedAt.toDate().toLocaleDateString();
+            const date = result.savedAt && typeof result.savedAt.toDate === 'function' 
+              ? result.savedAt.toDate().toLocaleDateString()
+              : 'Date not available';
             const questions = result.quizData.questions.map((q: any, i: number) => 
                 `  ${i+1}. Question: ${q.question}\n     Answer: ${q.answer}`
             ).join('\n');
