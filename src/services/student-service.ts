@@ -8,7 +8,21 @@ export interface Student {
     id: string;
     name: string;
     className: string;
-    createdAt: string; // Changed to string to be serializable
+    createdAt: string; 
+    quizzesCompleted: number;
+    averageScore: number;
+    status: 'On Track' | 'Needs Attention' | 'Excelling';
+    lastActivityDate: string;
+    avatar: string;
+    trend: 'up' | 'down' | 'stable';
+    alerts: {
+        missingAssignments: number;
+        attendanceConcern: boolean;
+        behavioralNote: boolean;
+    };
+    accommodations: string[];
+    lastPositiveNote: string;
+    assessmentHistory: { name: string; score: number }[];
 }
 
 export interface QuizResult {
@@ -25,6 +39,21 @@ export async function addStudent(name: string, className: string): Promise<strin
             name: name,
             className: className,
             createdAt: Timestamp.now(),
+            // Add default values for the new rich fields
+            quizzesCompleted: 0,
+            averageScore: 0,
+            status: 'On Track',
+            lastActivityDate: new Date().toLocaleDateString(),
+            avatar: `https://placehold.co/100x100.png`,
+            trend: 'stable',
+            alerts: {
+                missingAssignments: 0,
+                attendanceConcern: false,
+                behavioralNote: false,
+            },
+            accommodations: [],
+            lastPositiveNote: "Welcome!",
+            assessmentHistory: [],
         });
         return docRef.id;
     } catch (e) {
@@ -43,8 +72,17 @@ export async function getStudents(): Promise<Student[]> {
                 id: doc.id,
                 name: data.name,
                 className: data.className,
-                // Convert timestamp to a serializable string
                 createdAt: data.createdAt.toDate().toISOString(),
+                quizzesCompleted: data.quizzesCompleted || 0,
+                averageScore: data.averageScore || 0,
+                status: data.status || 'On Track',
+                lastActivityDate: data.lastActivityDate || new Date().toLocaleDateString(),
+                avatar: data.avatar || `https://placehold.co/100x100.png`,
+                trend: data.trend || 'stable',
+                alerts: data.alerts || { missingAssignments: 0, attendanceConcern: false, behavioralNote: false },
+                accommodations: data.accommodations || [],
+                lastPositiveNote: data.lastPositiveNote || '',
+                assessmentHistory: data.assessmentHistory || [],
             } as Student);
         });
         return students;

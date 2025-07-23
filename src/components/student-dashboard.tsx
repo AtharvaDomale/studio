@@ -313,9 +313,9 @@ export function StudentDashboard() {
                         <div className="space-y-2 text-sm text-right">
                            <p className="font-semibold">Critical Alerts:</p>
                            <div className="flex flex-col items-end gap-1">
-                                {selectedStudent.alerts.missingAssignments > 0 && <Badge variant="destructive" className="flex items-center gap-1"><AlertCircle size={14} />{selectedStudent.alerts.missingAssignments} Missing Assignments</Badge>}
-                                {selectedStudent.alerts.attendanceConcern && <Badge variant="destructive" className="flex items-center gap-1"><CalendarDays size={14} />Attendance Concern</Badge>}
-                                {selectedStudent.alerts.behavioralNote && <Badge variant="secondary" className="flex items-center gap-1"><BookCheck size={14} />Recent Behavioral Note</Badge>}
+                                {selectedStudent.alerts?.missingAssignments > 0 && <Badge variant="destructive" className="flex items-center gap-1"><AlertCircle size={14} />{selectedStudent.alerts.missingAssignments} Missing Assignments</Badge>}
+                                {selectedStudent.alerts?.attendanceConcern && <Badge variant="destructive" className="flex items-center gap-1"><CalendarDays size={14} />Attendance Concern</Badge>}
+                                {selectedStudent.alerts?.behavioralNote && <Badge variant="secondary" className="flex items-center gap-1"><BookCheck size={14} />Recent Behavioral Note</Badge>}
                            </div>
                         </div>
                     </div>
@@ -323,7 +323,7 @@ export function StudentDashboard() {
                      <div className="grid grid-cols-2 gap-4 text-left text-sm">
                         <div>
                             <p className="font-semibold text-foreground">Accommodations</p>
-                            {selectedStudent.accommodations.length > 0 ? (
+                            {selectedStudent.accommodations?.length > 0 ? (
                                 <ul className="list-disc pl-5 text-muted-foreground">
                                     {selectedStudent.accommodations.map(acc => <li key={acc}>{acc}</li>)}
                                 </ul>
