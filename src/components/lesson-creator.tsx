@@ -146,6 +146,7 @@ export function LessonCreator() {
                                 width={400} 
                                 height={400} 
                                 className="rounded-lg shadow-md bg-white"
+                                data-ai-hint="lesson concept"
                             />
                         </div>
                     )}
