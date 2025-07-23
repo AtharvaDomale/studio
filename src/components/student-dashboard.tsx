@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getStudents, Student } from "@/services/student-service-mock";
+import { getStudents, Student, addStudent } from "@/services/student-service-mock";
 import { evaluateStudentPerformance } from "@/ai/flows/student-evaluator";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -392,3 +392,6 @@ export function StudentDashboard() {
   );
 }
 
+
+
+    
