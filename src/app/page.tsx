@@ -1,5 +1,5 @@
 
-import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard, LayoutDashboard } from 'lucide-react';
+import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ExplainerTool } from '@/components/explainer-tool';
@@ -11,6 +11,7 @@ import { Header } from '@/components/header';
 import { StorybookGenerator } from '@/components/storybook-generator';
 import { LessonCreator } from '@/components/lesson-creator';
 import { AnimatedStorybook } from '@/components/animated-storybook';
+import { GeneralAssistant } from '@/components/general-assistant';
 
 export default function Home() {
   return (
@@ -18,7 +19,7 @@ export default function Home() {
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <Tabs defaultValue="lesson-creator" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-9 mb-4 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-10 mb-4 h-auto">
             <TabsTrigger value="lesson-creator" className="flex-col sm:flex-row py-2">
               <Users className="mb-1 sm:mb-0 sm:mr-2" /> Lesson Creator
             </TabsTrigger>
@@ -42,6 +43,9 @@ export default function Home() {
             </TabsTrigger>
             <TabsTrigger value="animated-storybook" className="flex-col sm:flex-row py-2">
                 <Clapperboard className="mb-1 sm:mb-0 sm:mr-2" /> Animated Story
+            </TabsTrigger>
+             <TabsTrigger value="assistant" className="flex-col sm:flex-row py-2">
+                <Sparkles className="mb-1 sm:mb-0 sm:mr-2" /> Assistant
             </TabsTrigger>
           </TabsList>
           
@@ -131,6 +135,17 @@ export default function Home() {
                       </CardDescription>
                   </CardHeader>
                   <AnimatedStorybook />
+              </Card>
+          </TabsContent>
+           <TabsContent value="assistant">
+              <Card className="shadow-lg">
+                  <CardHeader>
+                      <CardTitle>General Assistant</CardTitle>
+                      <CardDescription>
+                        Your AI assistant for everyday tasks. Ask it to schedule meetings, send emails, or take notes.
+                      </CardDescription>
+                  </CardHeader>
+                  <GeneralAssistant />
               </Card>
           </TabsContent>
         </Tabs>
