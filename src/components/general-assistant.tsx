@@ -3,40 +3,75 @@
 
 import { runAssistant } from "@/ai/flows/general-assistant";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardFooter } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { Loader2, Sparkles, User, Bot, FileImage, SendHorizonal } from "lucide-react";
+import { useState, useRef, FormEvent } from "react";
 import ReactMarkdown from 'react-markdown';
-import { Skeleton } from "./ui/skeleton";
+import { ScrollArea } from "./ui/scroll-area";
+import Image from "next/image";
 
-const formSchema = z.object({
-  query: z.string().min(10, { message: "Query must be at least 10 characters." }),
-});
+type Message = {
+    role: 'user' | 'model';
+    content: string;
+    image?: string;
+};
 
-type FormValues = z.infer<typeof formSchema>;
+type HistoryMessage = {
+    role: 'user' | 'model';
+    content: {
+        text?: string;
+        media?: { url: string; };
+    }[];
+};
 
 export function GeneralAssistant() {
-  const [result, setResult] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { query: "" },
-  });
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setPreviewImage(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-  async function onSubmit(data: FormValues) {
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() && !previewImage) return;
+
+    const userMessage: Message = { role: 'user', content: input, image: previewImage ?? undefined };
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    setResult(null);
+    setInput("");
+    setPreviewImage(null);
+
+    // Convert UI messages to the format expected by the AI flow
+    const history: HistoryMessage[] = messages.map(m => ({
+        role: m.role,
+        content: [{ text: m.content }]
+    }));
+    
     try {
-      const output = await runAssistant(data);
-      setResult(output.response);
+      const output = await runAssistant({
+        history,
+        query: input,
+        image: previewImage ?? undefined,
+      });
+
+      const modelMessage: Message = { role: 'model', content: output.response };
+      setMessages(prev => [...prev, modelMessage]);
+
     } catch (error) {
       console.error(error);
       toast({
@@ -44,6 +79,8 @@ export function GeneralAssistant() {
         description: "The assistant encountered an error. Please try again.",
         variant: "destructive",
       });
+      // Remove the user message that caused the error to allow retry
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -51,51 +88,85 @@ export function GeneralAssistant() {
 
   return (
     <>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="query"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>How can I help you?</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Create a 5-question worksheet about the water cycle..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
-              {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              Ask Assistant
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-
-      {(isLoading || result) && (
-        <CardFooter className="flex-col items-start gap-4">
-          <h3 className="text-lg font-semibold">Assistant's Response:</h3>
-          {isLoading ? (
-            <div className="w-full p-4 border rounded-lg bg-muted space-y-3">
-              <Skeleton className="w-3/4 h-5" />
-              <Skeleton className="w-1/2 h-5" />
+        <CardContent className="h-full flex flex-col p-0">
+            <ScrollArea className="flex-1 p-6 space-y-6">
+                <div className="space-y-4">
+                {messages.length === 0 && !isLoading && (
+                    <div className="text-center p-8 text-muted-foreground">
+                        <Bot className="mx-auto h-12 w-12 mb-4" />
+                        <h2 className="text-xl font-semibold">AI Assistant</h2>
+                        <p className="mt-2">Ask me anything, or give me a task. You can even upload an image!</p>
+                        <p className="text-xs mt-4">Examples:</p>
+                        <ul className="text-xs list-disc list-inside">
+                           <li>Create a 5-question worksheet on the water cycle.</li>
+                           <li>Send a positive note to Jane Doe's parents.</li>
+                           <li>Find a YouTube video about photosynthesis for 3rd graders.</li>
+                        </ul>
+                    </div>
+                )}
+                {messages.map((message, index) => (
+                    <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                        {message.role === 'model' && (
+                            <div className="p-2 rounded-full bg-primary text-primary-foreground">
+                                <Bot size={20}/>
+                            </div>
+                        )}
+                        <div className={`rounded-lg p-3 max-w-lg ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                            {message.image && <Image src={message.image} alt="User upload" width={200} height={200} className="rounded-md mb-2" />}
+                            <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                                <ReactMarkdown>{message.content}</ReactMarkdown>
+                            </div>
+                        </div>
+                         {message.role === 'user' && (
+                            <div className="p-2 rounded-full bg-muted text-muted-foreground">
+                                <User size={20}/>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                 {isLoading && (
+                    <div className="flex items-start gap-4">
+                        <div className="p-2 rounded-full bg-primary text-primary-foreground">
+                            <Bot size={20}/>
+                        </div>
+                        <div className="rounded-lg p-3 max-w-lg bg-muted flex items-center">
+                            <Loader2 className="animate-spin" />
+                        </div>
+                    </div>
+                )}
+                </div>
+            </ScrollArea>
+            <div className="p-4 border-t bg-background">
+                <form onSubmit={handleSubmit} className="flex items-center gap-2">
+                     <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                        <FileImage />
+                     </Button>
+                     <Input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleImageChange} 
+                     />
+                    <div className="flex-1 relative">
+                        <Input
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Type your message or upload an image..."
+                            disabled={isLoading}
+                        />
+                        {previewImage && (
+                            <div className="absolute right-2 bottom-12 p-1 bg-background border rounded-md">
+                                <Image src={previewImage} alt="Preview" width={40} height={40} className="rounded-sm" />
+                            </div>
+                        )}
+                    </div>
+                    <Button type="submit" disabled={isLoading || (!input.trim() && !previewImage)} size="icon">
+                        <SendHorizonal />
+                    </Button>
+                </form>
             </div>
-          ) : (
-            result && (
-              <div className="w-full prose prose-sm max-w-none dark:prose-invert p-4 border rounded-lg bg-muted">
-                <ReactMarkdown>{result}</ReactMarkdown>
-              </div>
-            )
-          )}
-        </CardFooter>
-      )}
+        </CardContent>
     </>
   );
 }

@@ -6,23 +6,38 @@
  *
  * This assistant can handle tasks like creating calendar events, sending emails,
  * creating worksheets, logging student behavior, and finding educational resources.
- * The tools are simulated for this prototype.
+ * It also supports continuous conversation and can extract text from images.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { MediaPart } from 'genkit';
 
+// Define a schema for a single message in the chat history
+const MessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.array(z.object({
+    text: z.string().optional(),
+    media: z.object({
+      url: z.string(),
+    }).optional(),
+  }))
+});
 
-// Define the schema for the assistant's input
+// Define the schema for the assistant's input, which now includes chat history
 const AssistantInputSchema = z.object({
-  query: z.string().describe('The user\'s request or question.'),
+  history: z.array(MessageSchema),
+  image: z.string().optional().describe(
+    "An optional image for context, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+  ),
+  query: z.string().describe("The user's current request or question."),
 });
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
 
 // Define the schema for the assistant's output
 const AssistantOutputSchema = z.object({
-  response: z.string().describe('The assistant\'s response, summarizing the action taken.'),
+  response: z.string().describe('The assistant\'s response, summarizing the action taken or answering the question.'),
 });
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
@@ -160,9 +175,16 @@ const assistantFlow = ai.defineFlow(
     outputSchema: AssistantOutputSchema,
   },
   async (input) => {
+
+    const currentMessage: (string | MediaPart)[] = [{ text: input.query }];
+    if (input.image) {
+      currentMessage.push({ media: { url: input.image }});
+    }
+
     const llmResponse = await ai.generate({
-      prompt: input.query,
-      model: 'googleai/gemini-2.0-flash', // A model that supports tool use
+      history: input.history,
+      prompt: currentMessage,
+      model: 'googleai/gemini-2.0-flash', // A model that supports tool use and vision
       tools: [
         addCalendarEvent, 
         sendEmail, 
@@ -173,6 +195,7 @@ const assistantFlow = ai.defineFlow(
       ],
       system: `You are a helpful teacher's assistant AI.
       Your primary job is to help teachers with their daily administrative and educational tasks by using the specialized tools you have available.
+      If the user provides an image, your primary task is to analyze it. If it contains text, extract and format the text. If it is an image without text, describe it.
       When asked to perform an action, use the available tools.
       If a tool is used, summarize the result of the tool call in your response in a friendly and professional tone.
       If you don't have a tool for the request, simply respond as a helpful AI assistant and explain that you cannot perform that specific action.
