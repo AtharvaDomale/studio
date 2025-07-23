@@ -13,6 +13,7 @@ import {ai} from '@/ai/genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import wav from 'wav';
+import {MediaPart} from 'genkit';
 
 // Define Input Schema
 const AnimatedStorybookInputSchema = z.object({
@@ -152,12 +153,16 @@ const animatedStorybookFlow = ai.defineFlow(
     for (let i = 0; i < storyAnalysis.scenes.length; i++) {
         const scene = storyAnalysis.scenes[i];
         
+        const videoPrompt: (string | MediaPart)[] = [
+            { text: `Animate this scene in a gentle, slow-panning Ken Burns style. Scene description: ${scene.illustrationPrompt}` },
+        ];
+        if (characterSheetDataUri) {
+          videoPrompt.push({ media: { url: characterSheetDataUri, contentType: 'image/png' } });
+        }
+        
         let { operation } = await ai.generate({
             model: googleAI.model('veo-2.0-generate-001'),
-            prompt: [
-                { text: `Animate this scene in a gentle, slow-panning Ken Burns style. Scene description: ${scene.illustrationPrompt}` },
-                { media: { url: characterSheetDataUri, contentType: 'image/png' } }
-            ],
+            prompt: videoPrompt,
             config: {
                 durationSeconds: 8,
                 aspectRatio: '16:9',
@@ -176,13 +181,8 @@ const animatedStorybookFlow = ai.defineFlow(
         const videoPart = operation.output?.message?.content.find(p => !!p.media);
         if (!videoPart || !videoPart.media?.url) throw new Error(`Failed to find video for scene ${i + 1}.`);
 
-        const fetch = (await import('node-fetch')).default;
-        const apiKey = process.env.GEMINI_API_KEY;
-        const videoDownloadResponse = await fetch(`${videoPart.media.url}&key=${apiKey}`);
-        if (!videoDownloadResponse.ok) throw new Error(`Failed to download video: ${videoDownloadResponse.statusText}`);
-
-        const videoBuffer = await videoDownloadResponse.arrayBuffer();
-        const videoUrl = `data:video/mp4;base64,${Buffer.from(videoBuffer).toString('base64')}`;
+        // Directly use the data URI from the response.
+        const videoUrl = videoPart.media.url;
 
         processedScenes.push({
             narrationAudio: narrationAudios[i],
