@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import ReactMarkdown from 'react-markdown';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -29,11 +30,14 @@ import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Separator } from "./ui/separator";
+import { Textarea } from "./ui/textarea";
 
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   className: z.string().min(1, { message: "Class name is required." }),
+  accommodations: z.string().optional(),
+  lastPositiveNote: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -45,12 +49,13 @@ export function StudentDashboard() {
   const [isEvaluating, setIsEvaluating] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<{ evaluationSummary: string } | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEvaluationDialogOpen, setIsEvaluationDialogOpen] = useState(false);
+  const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: "", className: "" },
+    defaultValues: { name: "", className: "", accommodations: "", lastPositiveNote: "" },
   });
 
   useEffect(() => {
@@ -73,9 +78,11 @@ export function StudentDashboard() {
   async function onSubmit(data: FormValues) {
     setIsAdding(true);
     try {
-      await addStudent(data.name, data.className);
+      const accommodationList = data.accommodations ? data.accommodations.split(',').map(s => s.trim()) : [];
+      await addStudent(data.name, data.className, accommodationList, data.lastPositiveNote);
       toast({ title: "Success", description: "Student added successfully." });
       form.reset();
+      setIsAddStudentDialogOpen(false);
       fetchStudents();
     } catch (error) {
       console.error(error);
@@ -88,7 +95,7 @@ export function StudentDashboard() {
   async function handleEvaluate(student: Student) {
     setSelectedStudent(student);
     setIsEvaluating(student.id);
-    setIsDialogOpen(true);
+    setIsEvaluationDialogOpen(true);
     setEvaluation(null);
     try {
       const result = await evaluateStudentPerformance({ studentId: student.id, studentName: student.name });
@@ -180,55 +187,88 @@ export function StudentDashboard() {
           )}
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Student</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col md:flex-row items-end gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Student Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Jane Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="className"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Class</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Grade 5 Math" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isAdding}>
-                {isAdding ? <Loader2 className="mr-2 animate-spin" /> : <UserPlus className="mr-2" />}
-                Add Student
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-
+      
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Student Roster</h2>
             <p className="text-muted-foreground">View and evaluate your students.</p>
           </div>
+          <Dialog open={isAddStudentDialogOpen} onOpenChange={setIsAddStudentDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2" />
+                Add New Student
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Student</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Student Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Jane Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="className"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Grade 5 Math" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="accommodations"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Accommodations</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="List accommodations, separated by commas..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastPositiveNote"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Initial Positive Note</FormLabel>
+                        <FormControl>
+                           <Input placeholder="e.g., Eager to participate!" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="submit" disabled={isAdding}>
+                      {isAdding && <Loader2 className="mr-2 animate-spin" />}
+                      Add Student
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
           {isLoading ? (
             <div className="flex justify-center items-center h-48">
@@ -287,7 +327,7 @@ export function StudentDashboard() {
           )}
       </div>
 
-       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+       <Dialog open={isEvaluationDialogOpen} onOpenChange={setIsEvaluationDialogOpen}>
           <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
             {selectedStudent ? (
                 <>

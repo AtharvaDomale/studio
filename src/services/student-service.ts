@@ -33,7 +33,7 @@ export interface QuizResult {
     savedAt: Timestamp;
 }
 
-export async function addStudent(name: string, className: string): Promise<string> {
+export async function addStudent(name: string, className: string, accommodations?: string[], lastPositiveNote?: string): Promise<string> {
     try {
         const docRef = await addDoc(collection(db, "students"), {
             name: name,
@@ -51,8 +51,8 @@ export async function addStudent(name: string, className: string): Promise<strin
                 attendanceConcern: false,
                 behavioralNote: false,
             },
-            accommodations: [],
-            lastPositiveNote: "Welcome!",
+            accommodations: accommodations || [],
+            lastPositiveNote: lastPositiveNote || "Welcome!",
             assessmentHistory: [],
         });
         return docRef.id;
@@ -121,3 +121,5 @@ export async function getStudentResults(studentId: string): Promise<QuizResult[]
         throw new Error("Could not retrieve student results.");
     }
 }
+
+    
