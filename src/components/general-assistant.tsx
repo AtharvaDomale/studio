@@ -95,12 +95,12 @@ export function GeneralAssistant() {
                     <div className="text-center p-8 text-muted-foreground">
                         <Bot className="mx-auto h-12 w-12 mb-4" />
                         <h2 className="text-xl font-semibold">AI Assistant</h2>
-                        <p className="mt-2">Ask me anything, or give me a task. You can even upload an image!</p>
+                        <p className="mt-2">Ask me anything about your Firebase project. You can even upload an image!</p>
                         <p className="text-xs mt-4">Examples:</p>
                         <ul className="text-xs list-disc list-inside">
-                           <li>Create a 5-question worksheet on the water cycle.</li>
-                           <li>Send a positive note to Jane Doe's parents.</li>
-                           <li>Find a YouTube video about photosynthesis for 3rd graders.</li>
+                           <li>How many users are in my project?</li>
+                           <li>List the collections in my Firestore database.</li>
+                           <li>What is my current project ID?</li>
                         </ul>
                     </div>
                 )}
