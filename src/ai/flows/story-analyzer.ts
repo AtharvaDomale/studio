@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that analyzes a story and breaks it down into scenes.
+ * @fileOverview An AI agent that analyzes a story and breaks it down into scenes and key concepts.
  *
  * This is the first step in the animated storybook generation process.
  */
@@ -20,11 +20,19 @@ const SceneSchema = z.object({
     illustrationPrompt: z.string().describe("A detailed prompt for an image generation model to create a consistent illustration for this scene."),
 });
 
+const KeyConceptSchema = z.object({
+    concept: z.string().describe("The key concept or vocabulary word."),
+    explanation: z.string().describe("A simple, grade-appropriate explanation of the concept."),
+    visualPrompt: z.string().describe("A detailed prompt for generating a simple visual aid to explain the concept."),
+});
+
+
 const StoryAnalysisSchema = z.object({
   title: z.string().describe("A creative title for the story."),
   mainCharacter: z.string().describe("The name of the main character."),
   characterSheetPrompt: z.string().describe("A detailed prompt to generate a consistent character reference sheet for the main character."),
   scenes: z.array(SceneSchema).describe("An array of scenes that make up the story."),
+  keyConcepts: z.array(KeyConceptSchema).describe("An array of up to 3 key concepts found in the story, with explanations and visual prompts."),
 });
 
 export type StoryAnalysis = z.infer<typeof StoryAnalysisSchema>;
@@ -49,8 +57,12 @@ const storyAnalysisFlow = ai.defineFlow(
     },
     async (input) => {
         const analysisResponse = await ai.generate({
-            prompt: `You are a master storyteller and film director. Analyze the following story and break it down into distinct scenes. For each scene, define the characters, setting, mood, and create a detailed illustration prompt. Ensure character consistency by first creating a character sheet prompt for the main character, and referencing it in each scene's illustration prompt. Also, extract the exact narration text for each scene, including speaker dialogue.
+            prompt: `You are a master storyteller, educator, and film director. Analyze the following story and break it down into distinct scenes. Also, identify up to 3 key educational concepts or vocabulary words from the text.
+
+            For each scene, define the characters, setting, mood, and create a detailed illustration prompt. Ensure character consistency by first creating a character sheet prompt for the main character, and referencing it in each scene's illustration prompt. Also, extract the exact narration text for each scene, including speaker dialogue.
             
+            For each key concept, provide a simple, grade-appropriate explanation and a prompt for generating a helpful visual aid.
+
             Story: "${input.story}"
             Grade Level: ${input.grade}
             Art Style: Charming children's storybook illustration, soft watercolor style, vibrant but gentle colors, rounded shapes, no sharp edges.

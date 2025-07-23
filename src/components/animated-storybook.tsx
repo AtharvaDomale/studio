@@ -18,6 +18,8 @@ import { Skeleton } from "./ui/skeleton";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import React from "react";
 import Image from "next/image";
+import { conceptImageGenerator } from "@/ai/flows/concept-image-generator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 const formSchema = z.object({
   story: z.string().min(20, { message: "Story must be at least 20 characters." }),
@@ -34,9 +36,18 @@ type SceneState = {
   errorMessage?: string;
 };
 
+type KeyConceptState = {
+  concept: string;
+  explanation: string;
+  visualPrompt: string;
+  imageUrl?: string;
+  status: 'pending' | 'loading' | 'done' | 'error';
+};
+
 export function AnimatedStorybook() {
   const [analysis, setAnalysis] = useState<StoryAnalysis | null>(null);
   const [scenes, setScenes] = useState<SceneState[]>([]);
+  const [keyConcepts, setKeyConcepts] = useState<KeyConceptState[]>([]);
   const [characterSheetUri, setCharacterSheetUri] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -60,7 +71,7 @@ export function AnimatedStorybook() {
           audio.currentTime = 0;
         }
       });
-      audioRefs.current[selectedIndex]?.play().catch(e => console.log("Play failed", e));
+      // Don't auto-play on select, let the user control it.
     };
 
     carouselApi.on("select", onSelect);
@@ -68,22 +79,23 @@ export function AnimatedStorybook() {
 
     return () => {
         carouselApi.off("select", onSelect);
-        carouselApi.off("reInit", onSelect);
+        carouselApi.off("reInit", on-select);
     };
   }, [carouselApi]);
 
 
   useEffect(() => {
-    if (analysis && scenes.length > 0 && isGenerating) {
-        generateAllScenes();
+    if (analysis && isGenerating) {
+        generateAssets();
     }
-  }, [analysis, scenes, isGenerating]);
+  }, [analysis, isGenerating]);
 
 
   async function onSubmit(data: FormValues) {
     setIsAnalyzing(true);
     setAnalysis(null);
     setScenes([]);
+    setKeyConcepts([]);
     setCharacterSheetUri(null);
     setIsGenerating(false);
     try {
@@ -94,7 +106,11 @@ export function AnimatedStorybook() {
         illustrationPrompt: s.illustrationPrompt,
         status: 'pending',
       })));
-      setIsGenerating(true); // Trigger scene generation
+      setKeyConcepts(analysisResult.keyConcepts.map(kc => ({
+        ...kc,
+        status: 'pending',
+      })));
+      setIsGenerating(true); // Trigger asset generation
     } catch (error) {
       console.error(error);
       toast({
@@ -107,41 +123,88 @@ export function AnimatedStorybook() {
     }
   }
 
-  async function generateAllScenes() {
+  async function generateAssets() {
     if (!analysis) return;
 
-    // First, generate the character sheet
+    // Generate Character Sheet first
     try {
-        const sheet = await generateCharacterSheet({ characterSheetPrompt: analysis.characterSheetPrompt });
-        setCharacterSheetUri(sheet.characterSheetDataUri);
+      const sheet = await generateCharacterSheet({ characterSheetPrompt: analysis.characterSheetPrompt });
+      setCharacterSheetUri(sheet.characterSheetDataUri);
     } catch (error) {
-        console.error("Failed to generate character sheet", error);
-        toast({ title: "Warning", description: "Could not generate a character sheet. Character consistency may be affected.", variant: "destructive" });
+      console.error("Failed to generate character sheet", error);
+      toast({ title: "Warning", description: "Could not generate a character sheet. Character consistency may be affected.", variant: "destructive" });
     }
 
-    // Now, generate scenes sequentially
-    for (let i = 0; i < analysis.scenes.length; i++) {
+    // Trigger scene and concept generation to run in parallel
+    const scenePromises = generateAllScenes(analysis.scenes);
+    const conceptPromises = generateAllConcepts(analysis.keyConcepts);
+
+    await Promise.all([scenePromises, conceptPromises]);
+    
+    setIsGenerating(false);
+  }
+
+  async function generateAllScenes(sceneData: StoryAnalysis['scenes']) {
+    for (let i = 0; i < sceneData.length; i++) {
       setScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'loading' } : s));
       try {
-        const sceneData = await generateScene({
-          narrationText: analysis.scenes[i].narrationText,
-          illustrationPrompt: analysis.scenes[i].illustrationPrompt,
+        const sceneResult = await generateScene({
+          narrationText: sceneData[i].narrationText,
+          illustrationPrompt: sceneData[i].illustrationPrompt,
           characterSheetDataUri: characterSheetUri ?? undefined,
         });
-        setScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'done', data: sceneData } : s));
+        setScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'done', data: sceneResult } : s));
       } catch (error) {
         console.error(`Error generating scene ${i + 1}:`, error);
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         setScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'error', errorMessage } : s));
-        toast({
-          title: `Error in Scene ${i + 1}`,
-          description: errorMessage,
-          variant: "destructive",
-        });
+        toast({ title: `Error in Scene ${i + 1}`, description: errorMessage, variant: "destructive" });
       }
     }
-    setIsGenerating(false);
   }
+
+  async function generateAllConcepts(conceptData: StoryAnalysis['keyConcepts']) {
+      for (let i = 0; i < conceptData.length; i++) {
+          setKeyConcepts(prev => prev.map((kc, idx) => idx === i ? { ...kc, status: 'loading' } : kc));
+          try {
+              const { media } = await ai.generate({
+                  model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                  prompt: conceptData[i].visualPrompt,
+                  config: { responseModalities: ['TEXT', 'IMAGE'] },
+              });
+              const imageUrl = media?.url;
+              if (!imageUrl) throw new Error("Image generation returned no media.");
+              setKeyConcepts(prev => prev.map((kc, idx) => idx === i ? { ...kc, status: 'done', imageUrl } : kc));
+          } catch (error) {
+              console.error(`Error generating concept image ${i + 1}:`, error);
+              setKeyConcepts(prev => prev.map((kc, idx) => idx === i ? { ...kc, status: 'error' } : kc));
+              toast({ title: `Error generating image for concept "${conceptData[i].concept}"`, variant: "destructive" });
+          }
+      }
+  }
+
+  function handlePlayAudio(index: number) {
+    const audio = audioRefs.current[index];
+    if (audio) {
+      audioRefs.current.forEach((a, i) => {
+        if (a && i !== index) {
+            a.pause();
+            a.currentTime = 0;
+        }
+      });
+      if (audio.paused) {
+        audio.play().catch(e => console.log("Play failed", e));
+      } else {
+        audio.pause();
+      }
+    }
+  }
+  
+  const loadingMessage = isAnalyzing 
+    ? "Analyzing Story..." 
+    : isGenerating 
+      ? "Generating Assets..."
+      : "Create Animated Storybook";
 
   return (
     <>
@@ -184,14 +247,8 @@ export function AnimatedStorybook() {
               )}
             />
             <Button type="submit" disabled={isAnalyzing || isGenerating} className="w-full md:w-auto">
-              {(isAnalyzing || isGenerating) ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isAnalyzing ? "Analyzing Story..." : `Generating Scene ${scenes.findIndex(s => s.status === 'loading') + 1}/${scenes.length}...`}
-                </>
-              ) : (
-                "Create Animated Storybook"
-              )}
+              {(isAnalyzing || isGenerating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loadingMessage}
             </Button>
           </form>
         </Form>
@@ -225,11 +282,16 @@ export function AnimatedStorybook() {
                                     </div>
                                 )}
                             </div>
-                            <p className="text-base text-center font-medium text-foreground leading-relaxed h-20 overflow-y-auto">
+                            <p className="text-base text-center font-medium text-foreground leading-relaxed h-20 overflow-y-auto p-2">
                                 {scene.narrationText}
                             </p>
                             {scene.status === 'done' && scene.data?.narrationAudio && (
+                                <>
                                 <audio ref={el => audioRefs.current[index] = el} src={scene.data.narrationAudio} />
+                                <Button onClick={() => handlePlayAudio(index)} variant="outline" size="sm" className="mx-auto">
+                                    Play Narration
+                                </Button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -240,8 +302,34 @@ export function AnimatedStorybook() {
                 <CarouselNext />
             </Carousel>
              <div className="text-center text-sm text-muted-foreground w-full">
-                <p>Navigate through the scenes using the arrows. Audio will play for the current scene.</p>
+                <p>Navigate through the scenes using the arrows.</p>
             </div>
+
+            {keyConcepts.length > 0 && (
+                <div className="w-full max-w-3xl mx-auto pt-6">
+                    <h4 className="text-xl font-bold mb-4">Key Concepts</h4>
+                    <Accordion type="single" collapsible className="w-full">
+                        {keyConcepts.map((kc, index) => (
+                            <AccordionItem value={`item-${index}`} key={index}>
+                                <AccordionTrigger>{kc.concept}</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="flex flex-col md:flex-row gap-4 items-start">
+                                        <div className="flex-1 space-y-2">
+                                            <p className="font-semibold">Explanation:</p>
+                                            <p>{kc.explanation}</p>
+                                        </div>
+                                        <div className="w-full md:w-48 h-48 relative flex-shrink-0 bg-muted rounded-md flex items-center justify-center">
+                                            {kc.status === 'loading' && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
+                                            {kc.status === 'done' && kc.imageUrl && <Image src={kc.imageUrl} alt={`Visual for ${kc.concept}`} fill objectFit="cover" className="rounded-md" />}
+                                            {kc.status === 'error' && <p className="text-destructive text-xs text-center p-2">Image failed to generate.</p>}
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </div>
+            )}
         </CardFooter>
       )}
     </>

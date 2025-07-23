@@ -9,7 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import {z} from 'genkit';
+import {z, genkit} from 'genkit';
 import wav from 'wav';
 import {MediaPart} from 'genkit';
 
@@ -156,14 +156,10 @@ const CharacterSheetOutputSchema = z.object({
 });
 export type CharacterSheetOutput = z.infer<typeof CharacterSheetOutputSchema>;
 
-export const generateCharacterSheet = ai.defineFlow({
-    name: 'generateCharacterSheet',
-    inputSchema: CharacterSheetInputSchema,
-    outputSchema: CharacterSheetOutputSchema,
-}, async ({ characterSheetPrompt }) => {
+export async function generateCharacterSheet(input: CharacterSheetInput): Promise<CharacterSheetOutput> {
     const { media: characterSheetImage } = await ai.generate({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: characterSheetPrompt,
+        prompt: input.characterSheetPrompt,
         config: { responseModalities: ['TEXT', 'IMAGE'] },
     });
     const characterSheetDataUri = characterSheetImage?.url;
@@ -171,4 +167,10 @@ export const generateCharacterSheet = ai.defineFlow({
         throw new Error("Failed to generate character sheet.");
     }
     return { characterSheetDataUri };
+};
+
+// Define a separate AI object for the concept image generation to avoid conflicts
+const aiImage = genkit({
+    plugins: [googleAI()],
+    model: 'googleai/gemini-2.0-flash-preview-image-generation'
 });
