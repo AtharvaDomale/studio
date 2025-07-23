@@ -3,14 +3,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow read and write access to the students collection
-    match /students/{studentId} {
-      allow read, write: if true;
-    }
-
-    // Allow read and write access to the quizResults collection
-    match /quizResults/{resultId} {
+    match /{document=**} {
       allow read, write: if true;
     }
   }
