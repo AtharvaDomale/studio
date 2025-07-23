@@ -121,10 +121,9 @@ export function LessonCreator() {
       </CardContent>
 
       {(isLoading || result) && (
-        <CardFooter>
-          <div className="w-full p-4 border rounded-lg bg-muted">
+        <CardFooter className="flex-col items-start w-full">
             {isLoading ? (
-                <div className="space-y-4">
+                <div className="w-full p-4 space-y-4">
                     <Skeleton className="w-1/3 h-8" />
                     <Skeleton className="w-full h-4" />
                     <Skeleton className="w-4/5 h-4" />
@@ -137,9 +136,9 @@ export function LessonCreator() {
                 </div>
             ) : (
                 result && (
-                <div className="space-y-6">
+                <div className="w-full space-y-6">
                     {result.imageUrl && (
-                        <div className="flex justify-center">
+                        <div className="flex justify-center py-4">
                             <Image 
                                 src={result.imageUrl} 
                                 alt="Lesson Visual Aid" 
@@ -149,13 +148,12 @@ export function LessonCreator() {
                             />
                         </div>
                     )}
-                    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground prose-li:text-foreground">
+                    <article className="prose dark:prose-invert max-w-none">
                         <ReactMarkdown>{result.lessonPlan}</ReactMarkdown>
-                    </div>
+                    </article>
                 </div>
                 )
             )}
-          </div>
         </CardFooter>
       )}
     </>
