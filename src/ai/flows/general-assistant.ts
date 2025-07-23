@@ -11,7 +11,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { MediaPart, run } from 'genkit';
+import { MediaPart } from 'genkit';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -60,7 +60,7 @@ const firebaseTool = ai.defineTool(
     },
     async (input) => {
       // This makes a real call to the Firebase MCP server.
-      const result = await run('firebase', {
+      const result = await ai.run('firebase', {
         method: input.method,
         params: input.params,
       });
