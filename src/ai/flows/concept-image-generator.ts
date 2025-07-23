@@ -38,20 +38,29 @@ export async function conceptImageGenerator(
   return conceptImageGeneratorFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'conceptImageGeneratorPrompt',
-  input: {schema: ConceptImageGeneratorInputSchema},
-  output: {schema: ConceptImageGeneratorOutputSchema},
-  prompt: `You are an expert educator and visual designer. Your task is to break down a complex concept, topic, or story into exactly 3 simple, easy-to-understand steps for a student. For each step, you must provide a concise explanation and generate a visually engaging, simple, and clear image that illustrates that step.
+const stepGenerationPrompt = ai.definePrompt({
+    name: 'conceptImageStepGenerationPrompt',
+    input: { schema: ConceptImageGeneratorInputSchema },
+    output: {
+      schema: z.object({
+        steps: z.array(
+          z.object({
+            stepDescription: z.string().describe('The description of the step, tailored for the specified grade and subject.'),
+          })
+        ).describe('A series of 3 steps to explain the concept.'),
+      }),
+    },
+    prompt: `You are an expert educator. Your task is to break down a complex concept, topic, or story into exactly 3 simple, easy-to-understand steps for a student.
 
-Consider the student's grade level and the subject to tailor the complexity of the language and the style of the images. The images should be illustrative and educational.
+Consider the student's grade level and the subject to tailor the complexity of the language.
 
 Topic/Story: {{{conceptDescription}}}
 Grade Level: {{{grade}}}
 Subject: {{{subject}}}
 
-Generate a 3-step explanation with corresponding images.`,
+Generate a 3-step explanation.`,
 });
+
 
 const conceptImageGeneratorFlow = ai.defineFlow(
   {
@@ -60,30 +69,30 @@ const conceptImageGeneratorFlow = ai.defineFlow(
     outputSchema: ConceptImageGeneratorOutputSchema,
   },
   async (input) => {
-    const llmResponse = await prompt(input);
-    const output = llmResponse.output;
+    const stepResponse = await stepGenerationPrompt(input);
+    const stepsData = stepResponse.output?.steps;
 
-    if (!output || !output.steps) {
-      throw new Error('Failed to get a valid response from the AI.');
+    if (!stepsData || stepsData.length === 0) {
+      throw new Error('Failed to get a valid step descriptions from the AI.');
     }
 
-    const imageGenerationPromises = output.steps.map(async (step) => {
-      const imagePrompt = `A simple, clear, and educational illustration for a ${input.grade} student studying ${input.subject}. The image should visually represent this concept: "${step.stepDescription}". Style: vibrant, simple, and easy-to-understand for educational purposes.`;
-      const { media } = await ai.generate({
-        model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: imagePrompt,
-        config: {
-          responseModalities: ['TEXT', 'IMAGE'],
-        },
-      });
+    const stepsWithImages = await Promise.all(
+      stepsData.map(async (step) => {
+        const imagePrompt = `A simple, clear, and educational illustration for a ${input.grade} student studying ${input.subject}. The image should visually represent this concept: "${step.stepDescription}". Style: vibrant, simple, and easy-to-understand for educational purposes.`;
+        const { media } = await ai.generate({
+          model: 'googleai/gemini-2.0-flash-preview-image-generation',
+          prompt: imagePrompt,
+          config: {
+            responseModalities: ['TEXT', 'IMAGE'],
+          },
+        });
 
-      return {
-        stepDescription: step.stepDescription,
-        imageUrl: media?.url || '',
-      };
-    });
-
-    const stepsWithImages = await Promise.all(imageGenerationPromises);
+        return {
+          stepDescription: step.stepDescription,
+          imageUrl: media?.url || '',
+        };
+      })
+    );
 
     return { steps: stepsWithImages };
   }
