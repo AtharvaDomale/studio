@@ -8,6 +8,7 @@ export interface Student {
     id: string;
     name: string;
     className: string;
+    createdAt: string; // Changed to string to be serializable
 }
 
 export interface QuizResult {
@@ -37,7 +38,14 @@ export async function getStudents(): Promise<Student[]> {
         const querySnapshot = await getDocs(collection(db, "students"));
         const students: Student[] = [];
         querySnapshot.forEach((doc) => {
-            students.push({ id: doc.id, ...doc.data() } as Student);
+            const data = doc.data();
+            students.push({ 
+                id: doc.id,
+                name: data.name,
+                className: data.className,
+                // Convert timestamp to a serializable string
+                createdAt: data.createdAt.toDate().toISOString(),
+            } as Student);
         });
         return students;
     } catch (e) {
