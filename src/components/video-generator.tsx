@@ -2,10 +2,11 @@
 import { conceptVideoGenerator } from "@/ai/flows/concept-video-generator";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,8 @@ import { z } from "zod";
 
 const formSchema = z.object({
   prompt: z.string().min(10, { message: "Prompt must be at least 10 characters." }),
+  grade: z.string({ required_error: "Please select a grade level." }),
+  subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
   duration: z.number().min(5).max(8).default(5),
   aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
   image: z.string().optional(),
@@ -26,19 +29,25 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+type Step = {
+  stepDescription: string;
+  videoUrl: string;
+};
+
 export function VideoGenerator() {
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<Step[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(0);
   const { toast } = useToast();
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { 
       prompt: "",
+      subject: "",
       duration: 5,
       aspectRatio: "16:9",
     },
@@ -59,25 +68,35 @@ export function VideoGenerator() {
 
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
-    setVideoUrl(null);
+    setResult(null);
+    setCurrentStep(0);
+    setTotalSteps(0);
+    
     try {
+      // Note: This is a simplified progress simulation.
+      // For a real scenario, you would use a streaming response or polling.
+      // We are simulating the "analysis" and "generation" phases.
+      setTotalSteps(4); // 1 for analysis, 3 for video gens (avg)
+      setCurrentStep(1);
+
       const output = await conceptVideoGenerator(data);
-      if (output.videoUrl) {
-        // Append API key for client-side fetching
-        const urlWithKey = `${output.videoUrl}&key=${apiKey}`;
-        setVideoUrl(urlWithKey);
+      
+      if (output.steps && output.steps.length > 0) {
+        setResult(output.steps);
       } else {
-        throw new Error("Video URL was not returned.");
+        throw new Error("The AI failed to generate video steps.");
       }
     } catch (error) {
       console.error(error);
       toast({
-        title: "Error Generating Video",
-        description: "Failed to generate video. Please try again later.",
+        title: "Error Generating Video Series",
+        description: error instanceof Error ? error.message : "An unknown error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+      setCurrentStep(0);
+      setTotalSteps(0);
     }
   }
 
@@ -101,10 +120,48 @@ export function VideoGenerator() {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="grade"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Grade Level</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select a grade" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
+                            <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                        <Input placeholder="e.g., Biology, History" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <FormField
                 control={form.control}
                 name="image"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Optional Starting Image</FormLabel>
                     <FormControl>
@@ -131,7 +188,7 @@ export function VideoGenerator() {
                 name="duration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Video Duration (seconds): {field.value}</FormLabel>
+                    <FormLabel>Video Duration Per Step (sec): {field.value}</FormLabel>
                     <FormControl>
                       <Slider
                         min={5}
@@ -176,30 +233,62 @@ export function VideoGenerator() {
               )}
             />
 
-            <Button type="submit" disabled={isLoading || !apiKey} className="w-full md:w-auto">
+            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Video
+              Generate Video Series
             </Button>
-            {!apiKey && <p className="text-sm text-destructive mt-2">API key is not configured. Video generation is disabled.</p>}
           </form>
         </Form>
       </CardContent>
-      {(isLoading || videoUrl) && (
-        <CardFooter>
-          <div className="w-full">
+      {(isLoading || result) && (
+        <CardFooter className="flex-col items-start space-y-4">
+            <h3 className="font-semibold text-lg">Generated Video Series:</h3>
             {isLoading ? (
-                <div className="space-y-4">
-                    <Skeleton className="w-full aspect-video rounded-lg" />
-                    <p className="text-center text-muted-foreground">Generating video... this may take a minute or two.</p>
+                 <div className="w-full space-y-4">
+                    <p className="text-center text-muted-foreground">Analyzing concept and generating video series... this may take several minutes.</p>
+                    <Carousel className="w-full">
+                        <CarouselContent>
+                            {Array.from({ length: 3 }).map((_, index) => (
+                            <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                                <div className="p-1">
+                                    <div className="flex flex-col h-full p-4 border rounded-lg gap-4">
+                                    <Skeleton className="w-full aspect-video rounded-md" />
+                                    <Skeleton className="w-4/5 h-6" />
+                                    </div>
+                                </div>
+                            </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                    </Carousel>
                 </div>
             ) : (
-              videoUrl && (
-                <video controls src={videoUrl} className="w-full rounded-lg" autoPlay>
-                  Your browser does not support the video tag.
-                </video>
+              result && (
+                <Carousel opts={{ align: "start", loop: false }} className="w-full">
+                  <CarouselContent>
+                    {result.map((step, index) => (
+                      <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                        <div className="p-1 h-full">
+                            <div className="flex flex-col h-full p-4 border rounded-lg bg-muted">
+                              <div className="relative w-full aspect-video mb-4 rounded-md overflow-hidden bg-black">
+                                  <video controls src={step.videoUrl} className="w-full h-full object-contain" autoPlay={index === 0} muted>
+                                      Your browser does not support the video tag.
+                                  </video>
+                              </div>
+                              <p className="text-sm font-medium text-foreground flex-1">
+                                <span className="font-bold">Step {index + 1}: </span>{step.stepDescription}
+                              </p>
+                            </div>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
               )
             )}
-          </div>
         </CardFooter>
       )}
     </>

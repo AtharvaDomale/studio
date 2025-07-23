@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion } from 'lucide-react';
+import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ExplainerTool } from '@/components/explainer-tool';
@@ -7,6 +7,7 @@ import { ImageGenerator } from '@/components/image-generator';
 import { VideoGenerator } from '@/components/video-generator';
 import { StudentAssessor } from '@/components/student-assessor';
 import { Header } from '@/components/header';
+import { StorybookGenerator } from '@/components/storybook-generator';
 
 export default function Home() {
   return (
@@ -14,7 +15,7 @@ export default function Home() {
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <Tabs defaultValue="explainer" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 mb-4 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 mb-4 h-auto">
             <TabsTrigger value="explainer" className="flex-col sm:flex-row py-2">
               <BookOpen className="mb-1 sm:mb-0 sm:mr-2" /> Explainer
             </TabsTrigger>
@@ -29,6 +30,9 @@ export default function Home() {
             </TabsTrigger>
             <TabsTrigger value="assessor" className="flex-col sm:flex-row py-2">
               <FileQuestion className="mb-1 sm:mb-0 sm:mr-2" /> Assessor
+            </TabsTrigger>
+            <TabsTrigger value="storybook-generator" className="flex-col sm:flex-row py-2">
+                <GraduationCap className="mb-1 sm:mb-0 sm:mr-2" /> Storybook Gen
             </TabsTrigger>
           </TabsList>
           
@@ -68,9 +72,9 @@ export default function Home() {
           <TabsContent value="video-generator">
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle>Concept Video Generator</CardTitle>
+                <CardTitle>Step-by-Step Video Generator</CardTitle>
                 <CardDescription>
-                  Create engaging videos that break down complex ideas into easy steps.
+                  Create an engaging, multi-part video series that breaks down complex ideas.
                 </CardDescription>
               </CardHeader>
               <VideoGenerator />
@@ -86,6 +90,17 @@ export default function Home() {
               </CardHeader>
               <StudentAssessor />
             </Card>
+          </TabsContent>
+          <TabsContent value="storybook-generator">
+              <Card className="shadow-lg">
+                  <CardHeader>
+                      <CardTitle>AI-Powered Storybook Generator</CardTitle>
+                      <CardDescription>
+                          Create engaging and educational storybooks with illustrations.
+                      </CardDescription>
+                  </CardHeader>
+                  <StorybookGenerator />
+              </Card>
           </TabsContent>
         </Tabs>
       </main>
