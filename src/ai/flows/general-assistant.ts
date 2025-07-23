@@ -11,8 +11,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { MediaPart } from 'genkit';
-import { run } from 'genkit/node';
+import { MediaPart, run } from 'genkit';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
