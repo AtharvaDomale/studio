@@ -149,7 +149,7 @@ export function LessonCreator() {
                             />
                         </div>
                     )}
-                    <div className="prose dark:prose-invert prose-sm max-w-none prose-headings:font-semibold prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground prose-li:text-foreground">
+                    <div className="prose dark:prose-invert max-w-none">
                         <ReactMarkdown>{result.lessonPlan}</ReactMarkdown>
                     </div>
                 </div>
