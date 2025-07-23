@@ -147,6 +147,7 @@ const animatedStorybookFlow = ai.defineFlow(
     });
 
     const narrationAudios = await Promise.all(audioGenerationPromises);
+    const apiKey = process.env.GEMINI_API_KEY;
 
     // === Step 4: Generate video for each scene sequentially to avoid rate limits ===
     const processedScenes = [];
@@ -181,8 +182,14 @@ const animatedStorybookFlow = ai.defineFlow(
         const videoPart = operation.output?.message?.content.find(p => !!p.media);
         if (!videoPart || !videoPart.media?.url) throw new Error(`Failed to find video for scene ${i + 1}.`);
 
-        // Directly use the data URI from the response.
-        const videoUrl = videoPart.media.url;
+        const fetch = (await import('node-fetch')).default;
+        const videoDownloadResponse = await fetch(`${videoPart.media!.url}&key=${apiKey}`);
+        if (!videoDownloadResponse.ok) {
+            throw new Error(`Failed to download video for scene ${i + 1}: ${videoDownloadResponse.statusText}`);
+        }
+        const videoBuffer = await videoDownloadResponse.arrayBuffer();
+        const base64Video = Buffer.from(videoBuffer).toString('base64');
+        const videoUrl = `data:video/mp4;base64,${base64Video}`;
 
         processedScenes.push({
             narrationAudio: narrationAudios[i],
