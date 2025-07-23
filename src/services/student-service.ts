@@ -1,4 +1,5 @@
 
+
 "use server";
 
 import { db } from '@/lib/firebase';
@@ -23,6 +24,9 @@ export interface Student {
     accommodations: string[];
     lastPositiveNote: string;
     assessmentHistory: { name: string; score: number }[];
+    submissionPatterns: { name: string; value: number; fill: string }[];
+    behavioralObservations: { date: string; note: string; tags: string[] }[];
+    communicationHistory: { date: string; type: string; summary: string }[];
 }
 
 export interface QuizResult {
@@ -54,6 +58,9 @@ export async function addStudent(name: string, className: string, accommodations
             accommodations: accommodations || [],
             lastPositiveNote: lastPositiveNote || "Welcome!",
             assessmentHistory: [],
+            submissionPatterns: [ { name: 'On Time', value: 0, fill: 'hsl(var(--chart-2))' }, { name: 'Late', value: 0, fill: 'hsl(var(--chart-4))' }, { name: 'Missing', value: 0, fill: 'hsl(var(--chart-1))' } ],
+            behavioralObservations: [],
+            communicationHistory: [],
         });
         return docRef.id;
     } catch (e) {
@@ -83,6 +90,9 @@ export async function getStudents(): Promise<Student[]> {
                 accommodations: data.accommodations || [],
                 lastPositiveNote: data.lastPositiveNote || '',
                 assessmentHistory: data.assessmentHistory || [],
+                submissionPatterns: data.submissionPatterns || [ { name: 'On Time', value: 0, fill: 'hsl(var(--chart-2))' }, { name: 'Late', value: 0, fill: 'hsl(var(--chart-4))' }, { name: 'Missing', value: 0, fill: 'hsl(var(--chart-1))' } ],
+                behavioralObservations: data.behavioralObservations || [],
+                communicationHistory: data.communicationHistory || [],
             } as Student);
         });
         return students;
@@ -121,5 +131,3 @@ export async function getStudentResults(studentId: string): Promise<QuizResult[]
         throw new Error("Could not retrieve student results.");
     }
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { getStudents, Student, addStudent } from "@/services/student-service";
@@ -12,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Activity, Award, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Minus, AlertCircle, CalendarDays, BookCheck } from "lucide-react";
+import { Loader2, UserPlus, Activity, Award, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Minus, AlertCircle, CalendarDays, BookCheck, MessageSquare, Briefcase, Mail } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import ReactMarkdown from 'react-markdown';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList, Line, LineChart } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList, Line, LineChart, Pie, PieChart } from "recharts";
 import { ChartConfig } from "./ui/chart";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -120,6 +121,24 @@ export function StudentDashboard() {
     },
   } satisfies ChartConfig;
 
+  const submissionChartConfig = {
+    submissions: {
+      label: "Submissions",
+    },
+    onTime: {
+      label: "On Time",
+      color: "hsl(var(--chart-2))",
+    },
+    late: {
+      label: "Late",
+      color: "hsl(var(--chart-4))",
+    },
+    missing: {
+      label: "Missing",
+      color: "hsl(var(--chart-1))",
+    },
+  } satisfies ChartConfig;
+
    const getStatusBadgeVariant = (status: Student['status']) => {
     switch (status) {
         case 'Excelling': return "default";
@@ -143,6 +162,16 @@ export function StudentDashboard() {
     if (trend === 'up') return <ArrowUp className="h-5 w-5 text-green-500" />;
     if (trend === 'down') return <ArrowDown className="h-5 w-5 text-red-500" />;
     return <Minus className="h-5 w-5 text-muted-foreground" />;
+  }
+
+  const HistoryEventIcon = ({ type }: { type: string }) => {
+    switch (type) {
+        case 'Parent Communication': return <Mail className="h-5 w-5 text-blue-500" />;
+        case 'Student Conference': return <MessageSquare className="h-5 w-5 text-green-500" />;
+        case 'System Alert': return <AlertCircle className="h-5 w-5 text-red-500" />;
+        case 'Counselor Note': return <Briefcase className="h-5 w-5 text-purple-500" />;
+        default: return <BookCheck className="h-5 w-5 text-muted-foreground" />;
+    }
   }
 
   return (
@@ -353,9 +382,9 @@ export function StudentDashboard() {
                         <div className="space-y-2 text-sm text-right">
                            <p className="font-semibold">Critical Alerts:</p>
                            <div className="flex flex-col items-end gap-1">
-                                {selectedStudent.alerts?.missingAssignments > 0 && <Badge variant="destructive" className="flex items-center gap-1"><AlertCircle size={14} />{selectedStudent.alerts.missingAssignments} Missing Assignments</Badge>}
-                                {selectedStudent.alerts?.attendanceConcern && <Badge variant="destructive" className="flex items-center gap-1"><CalendarDays size={14} />Attendance Concern</Badge>}
-                                {selectedStudent.alerts?.behavioralNote && <Badge variant="secondary" className="flex items-center gap-1"><BookCheck size={14} />Recent Behavioral Note</Badge>}
+                                {selectedStudent.alerts.missingAssignments > 0 && <Badge variant="destructive" className="flex items-center gap-1"><AlertCircle size={14} />{selectedStudent.alerts.missingAssignments} Missing Assignments</Badge>}
+                                {selectedStudent.alerts.attendanceConcern && <Badge variant="destructive" className="flex items-center gap-1"><CalendarDays size={14} />Attendance Concern</Badge>}
+                                {selectedStudent.alerts.behavioralNote && <Badge variant="secondary" className="flex items-center gap-1"><BookCheck size={14} />Recent Behavioral Note</Badge>}
                            </div>
                         </div>
                     </div>
@@ -411,11 +440,52 @@ export function StudentDashboard() {
                                 </ChartContainer>
                              </div>
                         </TabsContent>
-                        <TabsContent value="behaviors">
-                           <p className="text-muted-foreground text-center py-10">Behavior tracking features are coming soon.</p>
+                        <TabsContent value="behaviors" className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-8">
+                           <div>
+                                <h3 className="font-semibold mb-4">Submission Patterns</h3>
+                                <ChartContainer config={submissionChartConfig} className="min-h-[200px] w-full">
+                                    <PieChart>
+                                        <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                                        <Pie data={selectedStudent.submissionPatterns} dataKey="value" nameKey="name" innerRadius={50} />
+                                    </PieChart>
+                                </ChartContainer>
+                           </div>
+                           <div>
+                                <h3 className="font-semibold mb-4">In-Class Observations</h3>
+                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                    {selectedStudent.behavioralObservations.map((obs, i) => (
+                                        <Card key={i} className="bg-muted/50">
+                                            <CardContent className="p-3">
+                                                <p className="text-sm">{obs.note}</p>
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    {obs.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-2 text-right">{obs.date}</p>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                           </div>
                         </TabsContent>
-                        <TabsContent value="history">
-                             <p className="text-muted-foreground text-center py-10">Communication and history log features are coming soon.</p>
+                        <TabsContent value="history" className="pt-4">
+                            <h3 className="font-semibold mb-4">Communication & History Log</h3>
+                            <div className="relative pl-6">
+                                <div className="absolute left-6 top-0 h-full w-0.5 bg-border -translate-x-1/2"></div>
+                                {selectedStudent.communicationHistory.map((event, i) => (
+                                    <div key={i} className="relative flex items-start gap-4 mb-6">
+                                        <div className="absolute left-0 top-0 h-full flex items-center">
+                                            <div className="z-10 bg-background p-1 rounded-full border-2 border-background">
+                                                <HistoryEventIcon type={event.type} />
+                                            </div>
+                                        </div>
+                                        <div className="pl-6 w-full">
+                                            <p className="text-xs text-muted-foreground">{event.date}</p>
+                                            <p className="font-semibold">{event.type}</p>
+                                            <p className="text-sm text-muted-foreground">{event.summary}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </TabsContent>
                     </Tabs>
                 </div>
@@ -430,5 +500,3 @@ export function StudentDashboard() {
     </div>
   );
 }
-
-    
