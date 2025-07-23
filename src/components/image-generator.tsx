@@ -15,6 +15,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
   conceptDescription: z.string().min(10, { message: "Concept description must be at least 10 characters." }),
@@ -56,6 +57,8 @@ export function ImageGenerator() {
       setIsLoading(false);
     }
   }
+
+  const printableContent = result ? result.map(r => r.stepDescription).join('\n\n') : '';
 
   return (
     <>
@@ -142,24 +145,27 @@ export function ImageGenerator() {
             </Carousel>
           ) : (
             result && (
-              <Carousel opts={{ align: "start", loop: true }} className="w-full">
-                <CarouselContent>
-                  {result.map((step, index) => (
-                    <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                      <div className="p-1 h-full">
-                          <div className="flex flex-col h-full p-4 border rounded-lg bg-muted">
-                            <div className="relative w-full aspect-video mb-4">
-                                <Image src={step.imageUrl} alt={step.stepDescription} fill objectFit="cover" className="rounded-md bg-white" />
+              <div className="w-full">
+                <Carousel opts={{ align: "start", loop: true }} className="w-full mb-4">
+                  <CarouselContent>
+                    {result.map((step, index) => (
+                      <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                        <div className="p-1 h-full">
+                            <div className="flex flex-col h-full p-4 border rounded-lg bg-muted">
+                              <div className="relative w-full aspect-video mb-4">
+                                  <Image src={step.imageUrl} alt={step.stepDescription} fill objectFit="cover" className="rounded-md bg-white" />
+                              </div>
+                              <p className="text-sm font-medium text-foreground flex-1">{step.stepDescription}</p>
                             </div>
-                            <p className="text-sm font-medium text-foreground flex-1">{step.stepDescription}</p>
-                          </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
+                <OutputActions content={printableContent} />
+              </div>
             )
           )}
         </CardFooter>

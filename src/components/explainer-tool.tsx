@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
   content: z.string().min(10, { message: "Content must be at least 10 characters." }),
@@ -112,11 +113,12 @@ export function ExplainerTool() {
         </Form>
       </CardContent>
       {result && (
-        <CardFooter>
+        <CardFooter className="flex-col items-start gap-4">
           <div className="w-full p-4 border rounded-lg bg-muted">
             <h3 className="font-semibold mb-2 text-lg">Suggested Teaching Methods:</h3>
             <div className="whitespace-pre-wrap">{result}</div>
           </div>
+          <OutputActions content={result} />
         </CardFooter>
       )}
     </>

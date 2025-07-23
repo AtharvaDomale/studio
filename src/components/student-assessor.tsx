@@ -13,6 +13,7 @@ import { CheckCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
   topic: z.string().min(10, { message: "Topic must be at least 10 characters." }),
@@ -60,6 +61,8 @@ export function StudentAssessor() {
       setIsLoading(false);
     }
   }
+
+  const printableContent = quiz ? quiz.questions.map((q, i) => `${i+1}. ${q.question}\nOptions: ${q.options.join(', ')}\nAnswer: ${q.answer}`).join('\n\n') : '';
 
   return (
     <>
@@ -131,7 +134,7 @@ export function StudentAssessor() {
       </CardContent>
 
       {quiz?.questions && (
-        <CardFooter>
+        <CardFooter className="flex-col items-start gap-4">
           <div className="w-full">
             <h3 className="text-lg font-semibold mb-4">Generated Quiz</h3>
             <Accordion type="single" collapsible className="w-full">
@@ -151,6 +154,7 @@ export function StudentAssessor() {
               ))}
             </Accordion>
           </div>
+          <OutputActions content={printableContent} title="Quiz" />
         </CardFooter>
       )}
     </>

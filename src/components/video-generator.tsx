@@ -16,6 +16,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
   prompt: z.string().min(10, { message: "Prompt must be at least 10 characters." }),
@@ -83,6 +84,8 @@ export function VideoGenerator() {
       setIsLoading(false);
     }
   }
+
+  const printableContent = result ? `${result.title}\n\n${result.description}` : '';
 
   return (
     <>
@@ -270,7 +273,7 @@ export function VideoGenerator() {
             ) : (
               result && (
                 <div className="w-full max-w-lg mx-auto">
-                    <div className="flex flex-col h-full p-4 border rounded-lg bg-muted">
+                    <div className="flex flex-col h-full p-4 border rounded-lg bg-muted gap-4">
                         <div className="relative w-full aspect-video mb-4 rounded-md overflow-hidden bg-black">
                             <video controls src={result.videoUrl} className="w-full h-full object-contain" autoPlay muted>
                                 Your browser does not support the video tag.
@@ -280,6 +283,9 @@ export function VideoGenerator() {
                         <p className="text-sm text-foreground flex-1">
                           {result.description}
                         </p>
+                    </div>
+                    <div className="mt-4 w-full flex justify-center">
+                        <OutputActions content={printableContent} title={result.title} />
                     </div>
                 </div>
               )

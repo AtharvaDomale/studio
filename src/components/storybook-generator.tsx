@@ -15,6 +15,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
@@ -60,6 +61,9 @@ export function StorybookGenerator() {
       setIsLoading(false);
     }
   }
+
+  const printableContent = result ? `${result.title}\n\n` + result.pages.map((p, i) => `Page ${i+1}:\n${p.text}`).join('\n\n') : '';
+
 
   return (
     <>
@@ -139,7 +143,7 @@ export function StorybookGenerator() {
                 result && (
                 <div className="w-full space-y-4">
                     <h3 className="text-2xl font-bold text-center">{result.title}</h3>
-                    <Carousel opts={{ align: "start", loop: true }} className="w-full">
+                    <Carousel opts={{ align: "start", loop: true }} className="w-full mb-4">
                         <CarouselContent>
                         {result.pages.map((page, index) => (
                             <CarouselItem key={index} className="md:basis-4/5 lg:basis-3/4">
@@ -157,6 +161,7 @@ export function StorybookGenerator() {
                         <CarouselPrevious />
                         <CarouselNext />
                     </Carousel>
+                    <OutputActions content={printableContent} title={result.title} />
                 </div>
                 )
             )}

@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import ReactMarkdown from 'react-markdown';
 import { Skeleton } from "./ui/skeleton";
+import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
   teachingGoals: z.string().min(10, { message: "Teaching goals must be at least 10 characters." }),
@@ -88,24 +89,25 @@ export function WeeklyPlanner() {
         </Form>
       </CardContent>
       {(isLoading || result) && (
-        <CardFooter>
-          <div className="w-full p-4 border rounded-lg bg-muted">
-            {isLoading ? (
-                <div className="space-y-4">
-                    <Skeleton className="w-1/3 h-8" />
-                    <Skeleton className="w-full h-4" />
-                    <Skeleton className="w-4/5 h-4" />
-                    <Skeleton className="w-full h-4" />
-                    <Skeleton className="w-2/3 h-4" />
-                </div>
-            ) : (
-                result && (
-                  <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground prose-li:text-foreground">
+        <CardFooter className="flex-col items-start gap-4">
+          {isLoading ? (
+              <div className="w-full p-4 border rounded-lg bg-muted space-y-4">
+                  <Skeleton className="w-1/3 h-8" />
+                  <Skeleton className="w-full h-4" />
+                  <Skeleton className="w-4/5 h-4" />
+                  <Skeleton className="w-full h-4" />
+                  <Skeleton className="w-2/3 h-4" />
+              </div>
+          ) : (
+              result && (
+                <div className="w-full">
+                  <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground prose-li:text-foreground dark:prose-invert p-4 border rounded-lg bg-muted mb-4">
                     <ReactMarkdown>{result}</ReactMarkdown>
                   </div>
-                )
-            )}
-          </div>
+                  <OutputActions content={result} title="Weekly Teaching Plan" />
+                </div>
+              )
+          )}
         </CardFooter>
       )}
     </>

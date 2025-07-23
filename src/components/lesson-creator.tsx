@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "./ui/skeleton";
 import ReactMarkdown from 'react-markdown';
+import { OutputActions } from "./output-actions";
 
 
 const formSchema = z.object({
@@ -122,7 +123,7 @@ export function LessonCreator() {
       </CardContent>
 
       {(isLoading || result) && (
-        <CardFooter className="flex-col items-start w-full">
+        <CardFooter className="flex-col items-start w-full gap-4">
             {isLoading ? (
                 <div className="w-full p-4 space-y-4">
                     <Skeleton className="w-1/3 h-8" />
@@ -153,6 +154,7 @@ export function LessonCreator() {
                     <div className="w-full prose dark:prose-invert max-w-none">
                         <ReactMarkdown>{result.lessonPlan}</ReactMarkdown>
                     </div>
+                    <OutputActions content={result.lessonPlan} title="Lesson Plan" />
                 </div>
                 )
             )}
