@@ -61,7 +61,7 @@ export function GeneralAssistant() {
                 <FormItem>
                   <FormLabel>How can I help you?</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Email bob@example.com to schedule a meeting for Friday at 2pm" {...field} />
+                    <Input placeholder="e.g., Create a 5-question worksheet about the water cycle..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
