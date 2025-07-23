@@ -15,14 +15,17 @@ import { MediaPart } from 'genkit';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
-  role: z.enum(['user', 'model']),
+  role: z.enum(['user', 'model', 'tool']),
   content: z.array(z.object({
     text: z.string().optional(),
     media: z.object({
       url: z.string(),
     }).optional(),
+    toolRequest: z.any().optional(),
+    toolResult: z.any().optional(),
   }))
 });
+
 
 // Define the schema for the assistant's input, which now includes chat history
 const AssistantInputSchema = z.object({
@@ -121,4 +124,3 @@ const assistantFlow = ai.defineFlow(
     };
   }
 );
-
