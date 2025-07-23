@@ -1,8 +1,8 @@
 
 "use client";
 
-import { addStudent, getStudents, Student } from "@/services/student-service";
-import { evaluateStudentPerformance, StudentEvaluation } from "@/ai/flows/student-evaluator";
+import { addStudent, getStudents, Student } from "@/services/student-service-mock";
+import { evaluateStudentPerformance } from "@/ai/flows/student-evaluator";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,7 +44,7 @@ export function StudentDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState<string | null>(null);
-  const [evaluation, setEvaluation] = useState<StudentEvaluation | null>(null);
+  const [evaluation, setEvaluation] = useState<{ evaluationSummary: string } | null>(null);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({

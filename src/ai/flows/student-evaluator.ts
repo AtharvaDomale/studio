@@ -1,16 +1,16 @@
 
-'use server';
+"use server";
 
 /**
  * @fileOverview An AI agent that evaluates a student's performance based on their quiz history.
  *
- * This agent retrieves student data from Firestore and uses it to generate
+ * This agent retrieves student data from a mock service and uses it to generate
  * a performance summary and personalized recommendations.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getStudentResults, QuizResult } from '@/services/student-service';
+import { getStudentResults, QuizResult } from '@/services/student-service-mock';
 
 
 const StudentEvaluationInputSchema = z.object({
@@ -40,7 +40,7 @@ function formatQuizHistory(quizHistory: QuizResult[]): string {
         .map(result => {
             const date = result.savedAt && typeof result.savedAt.toDate === 'function' 
               ? result.savedAt.toDate().toLocaleDateString()
-              : 'Date not available';
+              : new Date().toLocaleDateString(); // Fallback for mock data
             const questions = result.quizData.questions.map((q: any, i: number) => 
                 `  ${i+1}. Question: ${q.question}\n     Answer: ${q.answer}`
             ).join('\n');
@@ -57,7 +57,7 @@ const studentEvaluatorFlow = ai.defineFlow(
     outputSchema: StudentEvaluationOutputSchema,
   },
   async (input) => {
-    // Step 1: Retrieve student's quiz history from Firestore
+    // Step 1: Retrieve student's quiz history from the mock service
     const quizHistory = await getStudentResults(input.studentId);
     
     const formattedHistory = formatQuizHistory(quizHistory);

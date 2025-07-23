@@ -17,7 +17,7 @@ import { z } from "zod";
 import { OutputActions } from "./output-actions";
 import { Input } from "./ui/input";
 import Image from "next/image";
-import { getStudents, saveQuizResult, Student } from "@/services/student-service";
+import { getStudents, saveQuizResult, Student } from "@/services/student-service-mock";
 
 const formSchema = z.object({
   topic: z.string().min(10, { message: "Topic must be at least 10 characters." }),
