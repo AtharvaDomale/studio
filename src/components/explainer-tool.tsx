@@ -1,0 +1,124 @@
+"use client";
+import { teachingMethodExplainer } from "@/ai/flows/teaching-method-explainer";
+import { Button } from "@/components/ui/button";
+import { CardContent, CardFooter } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+const formSchema = z.object({
+  content: z.string().min(10, { message: "Content must be at least 10 characters." }),
+  grade: z.string({ required_error: "Please select a grade level." }),
+  subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export function ExplainerTool() {
+  const [result, setResult] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { content: "", subject: "" },
+  });
+
+  async function onSubmit(data: FormValues) {
+    setIsLoading(true);
+    setResult(null);
+    try {
+      const output = await teachingMethodExplainer(data);
+      setResult(output.teachingMethods);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to generate explanation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Topic Content</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Enter a story, poem, or concept..." {...field} rows={5} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="grade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grade Level</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a grade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
+                          <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subject"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Literature, Science" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Generate Explanation
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+      {result && (
+        <CardFooter>
+          <div className="w-full p-4 border rounded-lg bg-muted">
+            <h3 className="font-semibold mb-2 text-lg">Suggested Teaching Methods:</h3>
+            <div className="whitespace-pre-wrap">{result}</div>
+          </div>
+        </CardFooter>
+      )}
+    </>
+  );
+}
