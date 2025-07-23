@@ -83,17 +83,23 @@ export default function Home() {
     <div className="flex flex-col min-h-dvh bg-background">
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tools.map((tool) => (
-            <ToolCard
-              key={tool.id}
-              icon={<tool.icon className="h-8 w-8 text-primary" />}
-              title={tool.title}
-              description={tool.description}
-            >
-              {tool.component}
-            </ToolCard>
-          ))}
+        <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Your AI Toolkit for Modern Education</h1>
+                <p className="mt-4 text-lg text-muted-foreground">Empowering teachers with intelligent tools to create, explain, and assess.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {tools.map((tool) => (
+                <ToolCard
+                key={tool.id}
+                icon={<tool.icon className="h-8 w-8 text-primary" />}
+                title={tool.title}
+                description={tool.description}
+                >
+                {tool.component}
+                </ToolCard>
+            ))}
+            </div>
         </div>
       </main>
     </div>
