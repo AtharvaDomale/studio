@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import ReactMarkdown from 'react-markdown';
 
 const formSchema = z.object({
   teachingGoals: z.string().min(10, { message: "Teaching goals must be at least 10 characters." }),
@@ -86,9 +87,8 @@ export function WeeklyPlanner() {
       </CardContent>
       {result && (
         <CardFooter>
-          <div className="w-full p-4 border rounded-lg bg-muted">
-            <h3 className="font-semibold mb-2 text-lg">Generated Weekly Plan:</h3>
-            <div className="whitespace-pre-wrap font-sans text-sm">{result}</div>
+          <div className="w-full p-4 border rounded-lg bg-muted prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground">
+            <ReactMarkdown>{result}</ReactMarkdown>
           </div>
         </CardFooter>
       )}
