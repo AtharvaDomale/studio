@@ -128,67 +128,68 @@ const animatedStorybookFlow = ai.defineFlow(
         throw new Error("Failed to generate character sheet.");
     }
     
-    // === Step 3: Process each scene to generate audio and video ===
-    const processedScenes = await Promise.all(
-        storyAnalysis.scenes.map(async (scene, index) => {
-            
-            // --- Generate narration audio for the scene ---
-            const { media: narrationAudioMedia } = await ai.generate({
-                model: googleAI.model('gemini-2.5-flash-preview-tts'),
-                prompt: scene.narrationText,
-                config: { responseModalities: ['AUDIO'] },
-            });
+    // === Step 3: Generate audio for all scenes in parallel ===
+    const audioGenerationPromises = storyAnalysis.scenes.map(async (scene, index) => {
+      const { media: narrationAudioMedia } = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash-preview-tts'),
+        prompt: scene.narrationText,
+        config: { responseModalities: ['AUDIO'] },
+      });
 
-            if (!narrationAudioMedia) throw new Error(`Failed to generate audio for scene ${index + 1}.`);
-            
-            const audioBuffer = Buffer.from(
-                narrationAudioMedia.url.substring(narrationAudioMedia.url.indexOf(',') + 1), 'base64'
-            );
-            const wavAudioBase64 = await toWav(audioBuffer);
-            const narrationAudio = `data:audio/wav;base64,${wavAudioBase64}`;
+      if (!narrationAudioMedia) throw new Error(`Failed to generate audio for scene ${index + 1}.`);
+      
+      const audioBuffer = Buffer.from(
+          narrationAudioMedia.url.substring(narrationAudioMedia.url.indexOf(',') + 1), 'base64'
+      );
+      const wavAudioBase64 = await toWav(audioBuffer);
+      return `data:audio/wav;base64,${wavAudioBase64}`;
+    });
 
+    const narrationAudios = await Promise.all(audioGenerationPromises);
 
-            // --- Generate video for the scene ---
-            let { operation } = await ai.generate({
-                model: googleAI.model('veo-2.0-generate-001'),
-                prompt: [
-                    { text: `Animate this scene in a gentle, slow-panning Ken Burns style. Scene description: ${scene.illustrationPrompt}` },
-                    { media: { url: characterSheetDataUri, contentType: 'image/png' } } // Provide character sheet for consistency
-                ],
-                config: {
-                    durationSeconds: 8,
-                    aspectRatio: '16:9',
-                },
-            });
-            
-            if (!operation) throw new Error(`Failed to start video generation for scene ${index + 1}.`);
-
-            while (!operation.done) {
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                operation = await ai.checkOperation(operation);
-            }
+    // === Step 4: Generate video for each scene sequentially to avoid rate limits ===
+    const processedScenes = [];
+    for (let i = 0; i < storyAnalysis.scenes.length; i++) {
+        const scene = storyAnalysis.scenes[i];
         
-            if (operation.error) throw new Error(`Video generation failed for scene ${index + 1}: ${operation.error.message}`);
+        let { operation } = await ai.generate({
+            model: googleAI.model('veo-2.0-generate-001'),
+            prompt: [
+                { text: `Animate this scene in a gentle, slow-panning Ken Burns style. Scene description: ${scene.illustrationPrompt}` },
+                { media: { url: characterSheetDataUri, contentType: 'image/png' } }
+            ],
+            config: {
+                durationSeconds: 8,
+                aspectRatio: '16:9',
+            },
+        });
+        
+        if (!operation) throw new Error(`Failed to start video generation for scene ${i + 1}.`);
 
-            const videoPart = operation.output?.message?.content.find(p => !!p.media);
-            if (!videoPart || !videoPart.media?.url) throw new Error(`Failed to find video for scene ${index + 1}.`);
+        while (!operation.done) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            operation = await ai.checkOperation(operation);
+        }
+    
+        if (operation.error) throw new Error(`Video generation failed for scene ${i + 1}: ${operation.error.message}`);
 
-            // Download video and convert to data URI
-            const fetch = (await import('node-fetch')).default;
-            const apiKey = process.env.GEMINI_API_KEY;
-            const videoDownloadResponse = await fetch(`${videoPart.media.url}&key=${apiKey}`);
-            if (!videoDownloadResponse.ok) throw new Error(`Failed to download video: ${videoDownloadResponse.statusText}`);
+        const videoPart = operation.output?.message?.content.find(p => !!p.media);
+        if (!videoPart || !videoPart.media?.url) throw new Error(`Failed to find video for scene ${i + 1}.`);
 
-            const videoBuffer = await videoDownloadResponse.arrayBuffer();
-            const videoUrl = `data:video/mp4;base64,${Buffer.from(videoBuffer).toString('base64')}`;
+        const fetch = (await import('node-fetch')).default;
+        const apiKey = process.env.GEMINI_API_KEY;
+        const videoDownloadResponse = await fetch(`${videoPart.media.url}&key=${apiKey}`);
+        if (!videoDownloadResponse.ok) throw new Error(`Failed to download video: ${videoDownloadResponse.statusText}`);
 
-            return {
-                narrationAudio,
-                videoUrl,
-                narrationText: scene.narrationText,
-            };
-        })
-    );
+        const videoBuffer = await videoDownloadResponse.arrayBuffer();
+        const videoUrl = `data:video/mp4;base64,${Buffer.from(videoBuffer).toString('base64')}`;
+
+        processedScenes.push({
+            narrationAudio: narrationAudios[i],
+            videoUrl: videoUrl,
+            narrationText: scene.narrationText,
+        });
+    }
 
     return {
       title: storyAnalysis.title,
