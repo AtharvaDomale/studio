@@ -14,19 +14,21 @@ import {z} from 'genkit';
 const ConceptImageGeneratorInputSchema = z.object({
   conceptDescription: z
     .string()
-    .describe('The description of the concept to be explained.'),
+    .describe('The description of the concept, topic, or story to be explained.'),
+  grade: z.string().describe('The grade level of the students.'),
+  subject: z.string().describe('The subject of the topic.'),
 });
 export type ConceptImageGeneratorInput = z.infer<typeof ConceptImageGeneratorInputSchema>;
 
 const ConceptImageGeneratorOutputSchema = z.object({
   steps: z.array(
     z.object({
-      stepDescription: z.string().describe('The description of the step.'),
+      stepDescription: z.string().describe('The description of the step, tailored for the specified grade and subject.'),
       imageUrl: z.string().describe(
-        'The URL of the generated image for the step, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'        
+        'The URL of the generated image for the step, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'
       ),
     })
-  ).describe('The steps to explain the concept, with an image for each step.'),
+  ).describe('A series of 3 steps to explain the concept, with an image for each step.'),
 });
 export type ConceptImageGeneratorOutput = z.infer<typeof ConceptImageGeneratorOutputSchema>;
 
@@ -40,15 +42,15 @@ const prompt = ai.definePrompt({
   name: 'conceptImageGeneratorPrompt',
   input: {schema: ConceptImageGeneratorInputSchema},
   output: {schema: ConceptImageGeneratorOutputSchema},
-  prompt: `You are an AI that generates a series of images that break down a complex concept step by step.
+  prompt: `You are an expert educator and visual designer. Your task is to break down a complex concept, topic, or story into exactly 3 simple, easy-to-understand steps for a student. For each step, you must provide a concise explanation and generate a visually engaging, simple, and clear image that illustrates that step.
 
-  You will receive a concept description as input.
-  Your task is to break down the concept into a series of steps, and for each step, generate an image that illustrates the step.
+Consider the student's grade level and the subject to tailor the complexity of the language and the style of the images. The images should be illustrative and educational.
 
-  Concept Description: {{{conceptDescription}}}
+Topic/Story: {{{conceptDescription}}}
+Grade Level: {{{grade}}}
+Subject: {{{subject}}}
 
-  For each step, provide a description and the URL of the generated image.
-`,
+Generate a 3-step explanation with corresponding images.`,
 });
 
 const conceptImageGeneratorFlow = ai.defineFlow(
@@ -57,30 +59,32 @@ const conceptImageGeneratorFlow = ai.defineFlow(
     inputSchema: ConceptImageGeneratorInputSchema,
     outputSchema: ConceptImageGeneratorOutputSchema,
   },
-  async input => {
-    const steps = [];
-    const numberOfSteps = 3; // You can adjust this number as needed
+  async (input) => {
+    const llmResponse = await prompt(input);
+    const output = llmResponse.output;
 
-    for (let i = 1; i <= numberOfSteps; i++) {
-      const stepDescription = `Step ${i}: Briefly explain this part of the concept.`;
-      const imagePrompt = `Generate an image that illustrates ${stepDescription} for the concept: ${input.conceptDescription}.`;
-      const {media} = await ai.generate({
-        // IMPORTANT: ONLY the googleai/gemini-2.0-flash-preview-image-generation model is able to generate images. You MUST use exactly this model to generate images.
+    if (!output || !output.steps) {
+      throw new Error('Failed to get a valid response from the AI.');
+    }
+
+    const imageGenerationPromises = output.steps.map(async (step) => {
+      const imagePrompt = `A simple, clear, and educational illustration for a ${input.grade} student studying ${input.subject}. The image should visually represent this concept: "${step.stepDescription}". Style: vibrant, simple, and easy-to-understand for educational purposes.`;
+      const { media } = await ai.generate({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt: imagePrompt,
         config: {
-          responseModalities: ['TEXT', 'IMAGE'], // MUST provide both TEXT and IMAGE, IMAGE only won't work
+          responseModalities: ['TEXT', 'IMAGE'],
         },
       });
 
-      if (media && media.url) {
-        steps.push({
-          stepDescription: stepDescription,
-          imageUrl: media.url,
-        });
-      }
-    }
+      return {
+        stepDescription: step.stepDescription,
+        imageUrl: media?.url || '',
+      };
+    });
 
-    return {steps};
+    const stepsWithImages = await Promise.all(imageGenerationPromises);
+
+    return { steps: stepsWithImages };
   }
 );

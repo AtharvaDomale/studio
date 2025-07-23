@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +18,8 @@ import { z } from "zod";
 
 const formSchema = z.object({
   conceptDescription: z.string().min(10, { message: "Concept description must be at least 10 characters." }),
+  grade: z.string({ required_error: "Please select a grade level." }),
+  subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -32,7 +36,7 @@ export function ImageGenerator() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { conceptDescription: "" },
+    defaultValues: { conceptDescription: "", subject: "" },
   });
 
   async function onSubmit(data: FormValues) {
@@ -71,6 +75,43 @@ export function ImageGenerator() {
                 </FormItem>
               )}
             />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="grade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grade Level</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a grade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
+                          <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subject"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Literature, Science" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate Images
