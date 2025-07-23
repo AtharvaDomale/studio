@@ -7,3 +7,4 @@ import '@/ai/flows/weekly-teaching-planner.ts';
 import '@/ai/flows/student-quiz-generator.ts';
 import '@/ai/flows/concept-video-generator.ts';
 import '@/ai/flows/storybook-generator.ts';
+import '@/ai/flows/lesson-plan-creator.ts';

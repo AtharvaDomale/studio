@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap } from 'lucide-react';
+import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ExplainerTool } from '@/components/explainer-tool';
@@ -8,14 +8,18 @@ import { VideoGenerator } from '@/components/video-generator';
 import { StudentAssessor } from '@/components/student-assessor';
 import { Header } from '@/components/header';
 import { StorybookGenerator } from '@/components/storybook-generator';
+import { LessonCreator } from '@/components/lesson-creator';
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-dvh bg-background">
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
-        <Tabs defaultValue="explainer" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 mb-4 h-auto">
+        <Tabs defaultValue="lesson-creator" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-7 mb-4 h-auto">
+            <TabsTrigger value="lesson-creator" className="flex-col sm:flex-row py-2">
+              <Users className="mb-1 sm:mb-0 sm:mr-2" /> Lesson Creator
+            </TabsTrigger>
             <TabsTrigger value="explainer" className="flex-col sm:flex-row py-2">
               <BookOpen className="mb-1 sm:mb-0 sm:mr-2" /> Explainer
             </TabsTrigger>
@@ -36,6 +40,17 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
           
+          <TabsContent value="lesson-creator">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>AI Lesson Creator</CardTitle>
+                <CardDescription>
+                  Generate a complete lesson plan by orchestrating multiple AI agents.
+                </CardDescription>
+              </CardHeader>
+              <LessonCreator />
+            </Card>
+          </TabsContent>
           <TabsContent value="explainer">
             <Card className="shadow-lg">
               <CardHeader>
