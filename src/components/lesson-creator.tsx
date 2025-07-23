@@ -12,7 +12,6 @@ import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import ReactMarkdown from "react-markdown";
 import { z } from "zod";
 import { Skeleton } from "./ui/skeleton";
 
@@ -148,9 +147,9 @@ export function LessonCreator() {
                             />
                         </div>
                     )}
-                    <article className="prose dark:prose-invert max-w-none">
-                        <ReactMarkdown>{result.lessonPlan}</ReactMarkdown>
-                    </article>
+                    <div className="w-full text-sm">
+                        <pre className="whitespace-pre-wrap font-sans">{result.lessonPlan}</pre>
+                    </div>
                 </div>
                 )
             )}
