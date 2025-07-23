@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config();
 
@@ -8,3 +9,4 @@ import '@/ai/flows/student-quiz-generator.ts';
 import '@/ai/flows/concept-video-generator.ts';
 import '@/ai/flows/storybook-generator.ts';
 import '@/ai/flows/lesson-plan-creator.ts';
+import '@/ai/flows/animated-storybook-generator.ts';
