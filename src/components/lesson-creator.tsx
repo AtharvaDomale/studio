@@ -14,6 +14,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "./ui/skeleton";
+import ReactMarkdown from 'react-markdown';
+
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
@@ -147,8 +149,8 @@ export function LessonCreator() {
                             />
                         </div>
                     )}
-                    <div className="w-full text-sm">
-                        <pre className="whitespace-pre-wrap font-sans">{result.lessonPlan}</pre>
+                    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-ul:text-foreground prose-li:text-foreground">
+                        <ReactMarkdown>{result.lessonPlan}</ReactMarkdown>
                     </div>
                 </div>
                 )
