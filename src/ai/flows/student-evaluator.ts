@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getStudentResults, QuizResult } from '@/services/student-service-mock';
+import { getStudentResults, QuizResult } from '@/services/student-service';
 
 
 const StudentEvaluationInputSchema = z.object({
@@ -89,3 +89,5 @@ const studentEvaluatorFlow = ai.defineFlow(
     };
   }
 );
+
+    

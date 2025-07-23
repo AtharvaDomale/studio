@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getStudents, Student, addStudent } from "@/services/student-service-mock";
+import { getStudents, Student, addStudent } from "@/services/student-service";
 import { evaluateStudentPerformance } from "@/ai/flows/student-evaluator";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,11 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, TrendingUp, TrendingDown, Award, Activity, AlertCircle, CalendarDays, BookCheck, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { Loader2, UserPlus, Activity, Award, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Minus, AlertCircle, CalendarDays, BookCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -391,7 +390,5 @@ export function StudentDashboard() {
     </div>
   );
 }
-
-
 
     
