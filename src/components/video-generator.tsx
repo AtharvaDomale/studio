@@ -1,8 +1,7 @@
 "use client";
-import { conceptVideoGenerator } from "@/ai/flows/concept-video-generator";
+import { conceptVideoGenerator, ConceptVideoGeneratorOutput } from "@/ai/flows/concept-video-generator";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -29,16 +28,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-type Step = {
-  stepDescription: string;
-  videoUrl: string;
-};
-
 export function VideoGenerator() {
-  const [result, setResult] = useState<Step[] | null>(null);
+  const [result, setResult] = useState<ConceptVideoGeneratorOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [totalSteps, setTotalSteps] = useState(0);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -69,34 +61,24 @@ export function VideoGenerator() {
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
     setResult(null);
-    setCurrentStep(0);
-    setTotalSteps(0);
     
     try {
-      // Note: This is a simplified progress simulation.
-      // For a real scenario, you would use a streaming response or polling.
-      // We are simulating the "analysis" and "generation" phases.
-      setTotalSteps(4); // 1 for analysis, 3 for video gens (avg)
-      setCurrentStep(1);
-
       const output = await conceptVideoGenerator(data);
       
-      if (output.steps && output.steps.length > 0) {
-        setResult(output.steps);
+      if (output.videoUrl) {
+        setResult(output);
       } else {
-        throw new Error("The AI failed to generate video steps.");
+        throw new Error("The AI failed to generate the video.");
       }
     } catch (error) {
       console.error(error);
       toast({
-        title: "Error Generating Video Series",
+        title: "Error Generating Video",
         description: error instanceof Error ? error.message : "An unknown error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
-      setCurrentStep(0);
-      setTotalSteps(0);
     }
   }
 
@@ -188,7 +170,7 @@ export function VideoGenerator() {
                 name="duration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Video Duration Per Step (sec): {field.value}</FormLabel>
+                    <FormLabel>Video Duration (sec): {field.value}</FormLabel>
                     <FormControl>
                       <Slider
                         min={5}
@@ -235,58 +217,38 @@ export function VideoGenerator() {
 
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Video Series
+              Generate Video
             </Button>
           </form>
         </Form>
       </CardContent>
       {(isLoading || result) && (
         <CardFooter className="flex-col items-start space-y-4">
-            <h3 className="font-semibold text-lg">Generated Video Series:</h3>
+            <h3 className="font-semibold text-lg">Generated Video:</h3>
             {isLoading ? (
-                 <div className="w-full space-y-4">
-                    <p className="text-center text-muted-foreground">Analyzing concept and generating video series... this may take several minutes.</p>
-                    <Carousel className="w-full">
-                        <CarouselContent>
-                            {Array.from({ length: 3 }).map((_, index) => (
-                            <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                                <div className="p-1">
-                                    <div className="flex flex-col h-full p-4 border rounded-lg gap-4">
-                                    <Skeleton className="w-full aspect-video rounded-md" />
-                                    <Skeleton className="w-4/5 h-6" />
-                                    </div>
-                                </div>
-                            </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious />
-                        <CarouselNext />
-                    </Carousel>
+                 <div className="w-full max-w-lg mx-auto space-y-4">
+                    <p className="text-center text-muted-foreground">Generating video... this may take a several minutes.</p>
+                    <div className="flex flex-col h-full p-4 border rounded-lg gap-4">
+                        <Skeleton className="w-full aspect-video rounded-md" />
+                        <Skeleton className="w-3/4 h-7" />
+                        <Skeleton className="w-full h-5" />
+                    </div>
                 </div>
             ) : (
               result && (
-                <Carousel opts={{ align: "start", loop: false }} className="w-full">
-                  <CarouselContent>
-                    {result.map((step, index) => (
-                      <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                        <div className="p-1 h-full">
-                            <div className="flex flex-col h-full p-4 border rounded-lg bg-muted">
-                              <div className="relative w-full aspect-video mb-4 rounded-md overflow-hidden bg-black">
-                                  <video controls src={step.videoUrl} className="w-full h-full object-contain" autoPlay={index === 0} muted>
-                                      Your browser does not support the video tag.
-                                  </video>
-                              </div>
-                              <p className="text-sm font-medium text-foreground flex-1">
-                                <span className="font-bold">Step {index + 1}: </span>{step.stepDescription}
-                              </p>
-                            </div>
+                <div className="w-full max-w-lg mx-auto">
+                    <div className="flex flex-col h-full p-4 border rounded-lg bg-muted">
+                        <div className="relative w-full aspect-video mb-4 rounded-md overflow-hidden bg-black">
+                            <video controls src={result.videoUrl} className="w-full h-full object-contain" autoPlay muted>
+                                Your browser does not support the video tag.
+                            </video>
                         </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </Carousel>
+                        <h4 className="text-lg font-semibold">{result.title}</h4>
+                        <p className="text-sm text-foreground flex-1">
+                          {result.description}
+                        </p>
+                    </div>
+                </div>
               )
             )}
         </CardFooter>
