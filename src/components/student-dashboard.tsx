@@ -30,6 +30,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import ReactMarkdown from 'react-markdown';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList } from "recharts";
+import { ChartConfig } from "./ui/chart";
+import { Badge } from "./ui/badge";
 
 
 const formSchema = z.object({
@@ -97,9 +101,67 @@ export function StudentDashboard() {
       setIsEvaluating(null);
     }
   }
+  
+  const chartData = students.map(s => ({
+    name: s.name.split(' ')[0], // Use first name for chart
+    averageScore: s.averageScore,
+    fill: s.averageScore >= 80 ? 'hsl(var(--chart-2))' : s.averageScore >= 60 ? 'hsl(var(--chart-4))' : 'hsl(var(--chart-1))',
+  }));
+
+  const chartConfig = {
+    averageScore: {
+      label: "Average Score",
+    },
+  } satisfies ChartConfig;
+
+  const getScoreBadgeVariant = (score: number) => {
+    if (score >= 80) return "default";
+    if (score >= 60) return "secondary";
+    return "destructive";
+  }
 
   return (
     <div className="space-y-8">
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Class Performance Overview</CardTitle>
+          <CardDescription>Average scores across all completed quizzes.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+             <div className="flex justify-center items-center h-64">
+              <Loader2 className="animate-spin text-primary" />
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+              <BarChart accessibilityLayer data={chartData} margin={{ top: 20, left: -20, right: 20 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                />
+                <YAxis domain={[0, 100]} tickLine={false} axisLine={false} tickMargin={10} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dot" />}
+                />
+                <Bar dataKey="averageScore" radius={8}>
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
+                  />
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Add New Student</CardTitle>
@@ -158,6 +220,8 @@ export function StudentDashboard() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Class</TableHead>
+                  <TableHead className="text-center">Quizzes Completed</TableHead>
+                  <TableHead className="text-center">Average Score</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -166,6 +230,12 @@ export function StudentDashboard() {
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>{student.className}</TableCell>
+                    <TableCell className="text-center">{student.quizzesCompleted}</TableCell>
+                    <TableCell className="text-center">
+                        <Badge variant={getScoreBadgeVariant(student.averageScore)}>
+                            {student.averageScore > 0 ? `${student.averageScore}%` : 'N/A'}
+                        </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                        <Dialog onOpenChange={(open) => !open && setEvaluation(null)}>
                         <DialogTrigger asChild>
