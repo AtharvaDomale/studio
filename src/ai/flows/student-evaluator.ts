@@ -40,7 +40,7 @@ function formatQuizHistory(quizHistory: QuizResult[]): string {
         .map(result => {
             const date = result.savedAt && typeof result.savedAt.toDate === 'function' 
               ? result.savedAt.toDate().toLocaleDateString()
-              : new Date().toLocaleDateString(); // Fallback for mock data
+              : "Date not available";
             const questions = result.quizData.questions.map((q: any, i: number) => 
                 `  ${i+1}. Question: ${q.question}\n     Answer: ${q.answer}`
             ).join('\n');
@@ -78,7 +78,7 @@ const studentEvaluatorFlow = ai.defineFlow(
     3.  **Areas for Improvement**: Specific topics or concepts where the student seems to be struggling.
     4.  **Actionable Recommendations**: Suggest concrete next steps, learning strategies, or resources to help the student improve.
 
-    Please format the entire output as a clean, well-structured Markdown document. Be encouraging and constructive in your tone.`;
+    Please format the entire output as a clean, readable document. Use Markdown headings (e.g., ###), lists, and bold text for structure. Do NOT use markdown code blocks (\`\`\`). Be encouraging and constructive in your tone.`;
 
     const { text } = await ai.generate({
       prompt: evaluationPrompt,
