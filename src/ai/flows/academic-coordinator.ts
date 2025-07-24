@@ -19,7 +19,7 @@ const RecentPaperSchema = z.object({
   source: z.string().describe("The journal or conference where it was published."),
   url: z.string().url().describe("A direct link to the paper (e.g., DOI or ArXiv)."),
 });
-type RecentPaper = z.infer<typeof RecentPaperSchema>;
+export type RecentPaper = z.infer<typeof RecentPaperSchema>;
 
 const recentPapersSearchTool = ai.defineTool(
   {
@@ -58,33 +58,75 @@ const ResearchDirectionSchema = z.object({
 });
 type ResearchDirection = z.infer<typeof ResearchDirectionSchema>;
 
+const FutureResearchInputSchema = z.object({
+    seminalTopic: z.string(),
+    recentPapers: z.array(RecentPaperSchema),
+});
+
+const newResearchPrompt = `
+Role: You are an AI Research Foresight Agent.
+
+Inputs:
+
+Seminal Paper: Information identifying a key foundational paper (e.g., Title, Authors, Abstract, DOI, Key Contributions Summary).
+{{{seminalTopic}}}
+Recent Papers Collection: A list or collection of recent academic papers
+(e.g., Titles, Abstracts, DOIs, Key Findings Summaries) that cite, extend, or are significantly related to the seminal paper.
+{{{recentPapers}}}
+
+Core Task:
+
+Analyze & Synthesize: Carefully analyze the core concepts and impact of the seminal paper.
+Then, synthesize the trends, advancements, identified gaps, limitations, and unanswered questions presented in the collection of recent papers.
+Identify Future Directions: Based on this synthesis, extrapolate and identify underexplored or novel avenues for future research that logically
+ extend from or react to the trajectory observed in the provided papers.
+
+Output Requirements:
+
+Generate a list of at least 3 distinct future research areas.
+Focus Criteria: Each proposed area must meet the following criteria:
+Novelty: Represents a significant departure from current work, tackles questions not yet adequately addressed,
+or applies existing concepts in a genuinely new context evident from the provided inputs. It should be not yet fully explored.
+Future Potential: Shows strong potential to be impactful, influential, interesting, or disruptive within the field in the coming years.
+Diversity Mandate: Ensure the portfolio of suggestions reflects a good balance across different types of potential future directions.
+Specifically, aim to include a mix of areas characterized by:
+High Potential Utility: Addresses practical problems, has clear application potential, or could lead to significant real-world benefits.
+Unexpectedness / Paradigm Shift: Challenges current assumptions, proposes unconventional approaches, connects previously disparate fields/concepts, or explores surprising implications.
+Emerging Popularity / Interest: Aligns with growing trends, tackles timely societal or scientific questions, or opens up areas likely to attract significant research community interest.
+
+Format: Present the research areas as a numbered list. For each area:
+Provide a clear, concise Title or Theme.
+Write a Brief Rationale (2-4 sentences) explaining:
+What the research area generally involves.
+Why it is novel or underexplored (linking back to the synthesis of the input papers).
+Why it holds significant future potential (implicitly or explicitly touching upon its utility, unexpectedness, or likely popularity).
+`;
+
+
 const futureResearchSuggesterTool = ai.defineTool(
     {
         name: 'futureResearchSuggester',
         description: 'Suggests potential future research directions based on a seminal work and recent papers.',
-        inputSchema: z.object({
-            seminalTopic: z.string(),
-            recentPapers: z.array(RecentPaperSchema),
-        }),
+        inputSchema: FutureResearchInputSchema,
         outputSchema: z.array(ResearchDirectionSchema),
     },
     async ({ seminalTopic, recentPapers }) => {
         console.log(`Generating research directions for: ${seminalTopic}`);
-        // This is a mock. A real implementation would use an LLM to synthesize this.
-        return [
-            {
-                area: `Cross-domain Application of ${seminalTopic.split(' ').pop()}`,
-                description: `Investigate how the core principles of ${seminalTopic} can be applied to new fields like bioinformatics or computational linguistics, building on the methods from recent papers.`,
+        const llmResponse = await ai.generate({
+            model: 'googleai/gemini-2.0-flash',
+            prompt: newResearchPrompt,
+            output: {
+                schema: z.object({
+                    researchDirections: z.array(ResearchDirectionSchema)
+                })
             },
-            {
-                area: `Ethical Implications and Mitigation Strategies`,
-                description: `Analyze the potential societal and ethical impacts raised by the recent advancements and propose frameworks for responsible innovation.`,
-            },
-            {
-                area: `Long-term Performance and Scalability`,
-                description: `Conduct a longitudinal study to evaluate the scalability and performance of the new frameworks proposed in recent works over extended periods and larger datasets.`,
-            },
-        ];
+            templateData: {
+                seminalTopic: seminalTopic,
+                recentPapers: JSON.stringify(recentPapers, null, 2)
+            }
+        });
+
+        return llmResponse.output?.researchDirections || [];
     }
 );
 
