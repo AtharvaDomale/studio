@@ -1,57 +1,56 @@
 
-import { Header } from '@/components/header';
 import { AcademicCoordinatorAgent } from '@/components/research-agent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarPlus, Mail, Rss } from 'lucide-react';
 import { GmailAssistant } from '@/components/gmail-assistant';
 import { CalendarAssistant } from '@/components/calendar-assistant';
+import { ToolCard } from '@/components/tool-card';
+
+const agents = [
+    {
+        id: 'academic-coordinator',
+        icon: Rss,
+        title: 'Multi-Agent Academic Research',
+        description: 'Provide a topic, and the coordinator will orchestrate sub-agents to analyze it, find recent papers, and suggest future research directions.',
+        component: <AcademicCoordinatorAgent />,
+    },
+    {
+        id: 'gmail-assistant',
+        icon: Mail,
+        title: 'Gmail Assistant (via n8n Webhook)',
+        description: 'Use an agent that sends your prompt to an external n8n workflow to interact with your Gmail account.',
+        component: <GmailAssistant />,
+    },
+    {
+        id: 'calendar-assistant',
+        icon: CalendarPlus,
+        title: 'Calendar Assistant (via n8n Webhook)',
+        description: 'Provide an event description, and the agent will send it to your n8n webhook to create a calendar event.',
+        component: <CalendarAssistant />,
+    }
+]
 
 export default function AgentsPage() {
   return (
-    <div className="flex flex-col min-h-dvh bg-background">
-      <Header />
-      <main className="flex-1 p-4 md:p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto grid gap-12">
-            <div className="text-center">
+    <div className="flex flex-col min-h-dvh">
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">AI Agent Hub</h1>
                 <p className="mt-4 text-lg text-muted-foreground">Your intelligent partners for complex tasks.</p>
             </div>
-            <Card>
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <Rss className="h-8 w-8 text-primary" />
-                    <div>
-                        <CardTitle>Multi-Agent Academic Research</CardTitle>
-                        <CardDescription>Provide a topic, and the coordinator will orchestrate sub-agents to analyze it, find recent papers, and suggest future research directions.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <AcademicCoordinatorAgent />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <Mail className="h-8 w-8 text-primary" />
-                    <div>
-                        <CardTitle>Gmail Assistant (via n8n Webhook)</CardTitle>
-                        <CardDescription>Use an agent that sends your prompt to an external n8n workflow to interact with your Gmail account.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <GmailAssistant />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <CalendarPlus className="h-8 w-8 text-primary" />
-                    <div>
-                        <CardTitle>Calendar Assistant (via n8n Webhook)</CardTitle>
-                        <CardDescription>Provide an event description, and the agent will send it to your n8n webhook to create a calendar event.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <CalendarAssistant />
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {agents.map((agent) => (
+                <ToolCard
+                key={agent.id}
+                icon={<agent.icon className="h-8 w-8 text-primary" />}
+                title={agent.title}
+                description={agent.description}
+                >
+                {agent.component}
+                </ToolCard>
+            ))}
+            </div>
         </div>
       </main>
     </div>

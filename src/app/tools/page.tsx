@@ -1,11 +1,11 @@
 
+
 import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard } from 'lucide-react';
 import { ExplainerTool } from '@/components/explainer-tool';
 import { WeeklyPlanner } from '@/components/weekly-planner';
 import { ImageGenerator } from '@/components/image-generator';
 import { VideoGenerator } from '@/components/video-generator';
 import { StudentAssessor } from '@/components/student-assessor';
-import { Header } from '@/components/header';
 import { StorybookGenerator } from '@/components/storybook-generator';
 import { LessonCreator } from '@/components/lesson-creator';
 import { AnimatedStorybook } from '@/components/animated-storybook';
@@ -72,9 +72,8 @@ const tools = [
 
 export default function ToolsPage() {
   return (
-    <div className="flex flex-col min-h-dvh bg-background">
-      <Header />
-      <main className="flex-1 p-4 md:p-6 lg:p-8">
+    <div className="flex flex-col min-h-dvh">
+      <main className="flex-1">
         <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Your AI Toolkit for Modern Education</h1>
