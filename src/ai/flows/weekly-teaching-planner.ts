@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -20,6 +21,7 @@ const WeeklyTeachingPlanInputSchema = z.object({
     .describe(
       'Any constraints or limitations for the week, such as time restrictions, resource limitations, or student needs.'
     ),
+  language: z.string().describe('The language for the output.'),
 });
 export type WeeklyTeachingPlanInput = z.infer<typeof WeeklyTeachingPlanInputSchema>;
 
@@ -45,6 +47,7 @@ const prompt = ai.definePrompt({
   Based on the provided teaching goals and constraints, generate a detailed weekly plan that optimizes time and resources. 
   
   The output should be a well-structured and human-readable plan, not a JSON object. Use markdown for formatting if needed.
+  The entire plan must be in the following language: {{{language}}}.
 
   Teaching Goals: {{{teachingGoals}}}
   Constraints: {{{constraints}}}

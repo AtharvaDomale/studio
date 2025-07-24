@@ -17,6 +17,7 @@ const TeachingMethodExplainerInputSchema = z.object({
   content: z.string().describe('The lesson content (text, image data URI, or voice data URI).'),
   grade: z.string().describe('The class grade level.'),
   subject: z.string().describe('The subject of the lesson.'),
+  language: z.string().describe('The language for the output.'),
   image: z.string().optional().describe(
     "An optional image for context, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
@@ -43,7 +44,7 @@ const teachingMethodExplainerFlow = ai.defineFlow(
   async (input) => {
     const prompt: (string | MediaPart)[] = [
       {
-        text: `You are an experienced teacher. Given the lesson content, class grade, and subject, suggest simplified teaching methods. Analyze both the text and the image (if provided) to create your suggestions.
+        text: `You are an experienced teacher. Given the lesson content, class grade, and subject, suggest simplified teaching methods. Analyze both the text and the image (if provided) to create your suggestions. The entire response must be in the following language: ${input.language}.
         
         Lesson Content: ${input.content}
         Class Grade: ${input.grade}

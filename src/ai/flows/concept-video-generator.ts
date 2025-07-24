@@ -18,6 +18,7 @@ const ConceptVideoGeneratorInputSchema = z.object({
   prompt: z.string().describe('The prompt or topic to generate a video for.'),
   grade: z.string().describe('The grade level of the students.'),
   subject: z.string().describe('The subject of the topic.'),
+  language: z.string().describe('The language for the output.'),
   image: z.string().optional().describe(
     "An optional starting image for the video, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
@@ -51,7 +52,7 @@ const conceptVideoGeneratorFlow = ai.defineFlow(
 
     // Step 1: Generate a title and description
     const titleAndDescResponse = await ai.generate({
-        prompt: `Create a concise title and a one-sentence description for an educational video about "${input.prompt}" for a ${input.grade} ${input.subject} student.`,
+        prompt: `Create a concise title and a one-sentence description for an educational video about "${input.prompt}" for a ${input.grade} ${input.subject} student. The title and description must be in ${input.language}.`,
         output: {
             schema: z.object({
                 title: z.string(),

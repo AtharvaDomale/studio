@@ -23,6 +23,7 @@ const formSchema = z.object({
   topic: z.string().min(10, { message: "Topic must be at least 10 characters." }),
   gradeLevel: z.string({ required_error: "Please select a grade level." }),
   numberOfQuestions: z.number().min(1).max(10).default(5),
+  language: z.string().min(2, { message: "Language is required."}),
   image: z.string().optional(),
 });
 
@@ -63,7 +64,7 @@ export function StudentAssessor() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { topic: "", numberOfQuestions: 5 },
+    defaultValues: { topic: "", numberOfQuestions: 5, language: "English" },
   });
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,6 +187,19 @@ export function StudentAssessor() {
                 )}
               />
             </div>
+             <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Spanish, French, Japanese" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
              <FormField
               control={form.control}
               name="image"

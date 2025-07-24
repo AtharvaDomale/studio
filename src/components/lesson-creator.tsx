@@ -22,6 +22,7 @@ const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
   grade: z.string({ required_error: "Please select a grade level." }),
   subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
+  language: z.string().min(2, { message: "Language is required."}),
   image: z.string().optional(),
 });
 
@@ -41,7 +42,7 @@ export function LessonCreator() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { topic: "", subject: "" },
+    defaultValues: { topic: "", subject: "", language: "English" },
   });
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,6 +131,19 @@ export function LessonCreator() {
                 )}
               />
             </div>
+             <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Spanish, French, Japanese" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <FormField
               control={form.control}
               name="image"

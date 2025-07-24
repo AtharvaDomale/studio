@@ -4,6 +4,7 @@ import { generateWeeklyPlan } from "@/ai/flows/weekly-teaching-planner";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,7 @@ import { OutputActions } from "./output-actions";
 const formSchema = z.object({
   teachingGoals: z.string().min(10, { message: "Teaching goals must be at least 10 characters." }),
   constraints: z.string().min(10, { message: "Constraints must be at least 10 characters." }),
+  language: z.string().min(2, { message: "Language is required."}),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -29,7 +31,7 @@ export function WeeklyPlanner() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { teachingGoals: "", constraints: "" },
+    defaultValues: { teachingGoals: "", constraints: "", language: "English" },
   });
 
   async function onSubmit(data: FormValues) {
@@ -81,6 +83,19 @@ export function WeeklyPlanner() {
                 </FormItem>
               )}
             />
+            <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Spanish, French, Japanese" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate Weekly Plan

@@ -21,6 +21,7 @@ const LessonPlanCreatorInputSchema = z.object({
   topic: z.string().describe('The central topic for the lesson plan.'),
   grade: z.string().describe('The grade level of the students.'),
   subject: z.string().describe('The subject of the lesson.'),
+  language: z.string().describe('The language for the output.'),
   image: z.string().optional().describe(
     "An optional image for context, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
@@ -54,18 +55,21 @@ const lessonPlanCreatorFlow = ai.defineFlow(
         content: input.topic,
         grade: input.grade,
         subject: input.subject,
+        language: input.language,
         image: input.image,
       }),
       generateQuiz({
         topic: input.topic,
         gradeLevel: input.grade,
         numberOfQuestions: 3,
+        language: input.language,
         image: input.image,
       }),
       conceptImageGenerator({
         conceptDescription: input.topic,
         grade: input.grade,
         subject: input.subject,
+        language: input.language,
       }),
     ]);
     
@@ -75,6 +79,7 @@ const lessonPlanCreatorFlow = ai.defineFlow(
     console.log('Synthesizing results from all agents...');
     const synthesisPromptText = `You are a master educator responsible for creating a final, comprehensive lesson plan.
     You have received input from several specialized AI agents. Your task is to synthesize this information into a single, cohesive, and well-structured lesson plan document.
+    The entire lesson plan must be in the following language: ${input.language}.
     If an image was provided as part of the input, make sure to incorporate it into the lesson plan, for example by creating activities or discussion points around it.
 
     Topic: ${input.topic}

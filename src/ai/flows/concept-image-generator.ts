@@ -18,6 +18,7 @@ const ConceptImageGeneratorInputSchema = z.object({
     .describe('The description of the concept, topic, or story to be explained.'),
   grade: z.string().describe('The grade level of the students.'),
   subject: z.string().describe('The subject of the topic.'),
+  language: z.string().describe('The language for the output.'),
 });
 export type ConceptImageGeneratorInput = z.infer<typeof ConceptImageGeneratorInputSchema>;
 
@@ -54,6 +55,8 @@ const stepGenerationPrompt = ai.definePrompt({
     prompt: `You are an expert educator and AI agent. Your task is to research and break down a complex concept, topic, or story into exactly 3 simple, easy-to-understand steps for a student.
 
 Your research must consider the student's grade level and the subject to tailor the complexity of the language and the depth of the explanation.
+
+The entire output, including all step descriptions, must be in the following language: {{{language}}}.
 
 Topic/Story: {{{conceptDescription}}}
 Grade Level: {{{grade}}}

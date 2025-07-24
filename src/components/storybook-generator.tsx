@@ -20,6 +20,7 @@ import { OutputActions } from "./output-actions";
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
   grade: z.string({ required_error: "Please select a grade level." }),
+  language: z.string().min(2, { message: "Language is required."}),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,7 +42,7 @@ export function StorybookGenerator() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { topic: "" },
+    defaultValues: { topic: "", language: "English" },
   });
 
   async function onSubmit(data: FormValues) {
@@ -83,28 +84,43 @@ export function StorybookGenerator() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="grade"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Grade Level</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a grade" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
-                        <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="grade"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Grade Level</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a grade" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
+                            <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                    control={form.control}
+                    name="language"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Language</FormLabel>
+                        <FormControl>
+                        <Input placeholder="e.g., Spanish, French, Japanese" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate Storybook

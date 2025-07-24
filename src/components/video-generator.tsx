@@ -21,6 +21,7 @@ const formSchema = z.object({
   prompt: z.string().min(10, { message: "Prompt must be at least 10 characters." }),
   grade: z.string({ required_error: "Please select a grade level." }),
   subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
+  language: z.string().min(2, { message: "Language is required."}),
   image: z.string().optional(),
 });
 
@@ -38,6 +39,7 @@ export function VideoGenerator() {
     defaultValues: { 
       prompt: "",
       subject: "",
+      language: "English",
     },
   });
 
@@ -136,6 +138,19 @@ export function VideoGenerator() {
                     )}
                 />
             </div>
+             <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language for Title/Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Spanish, French, Japanese" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             
             <FormField
               control={form.control}

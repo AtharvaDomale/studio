@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,6 +15,7 @@ import {z} from 'genkit';
 const StorybookGeneratorInputSchema = z.object({
   topic: z.string().describe('The topic or theme of the story.'),
   grade: z.string().describe('The grade level of the target audience.'),
+  language: z.string().describe('The language for the story.'),
 });
 export type StorybookGeneratorInput = z.infer<typeof StorybookGeneratorInputSchema>;
 
@@ -54,12 +56,12 @@ const storyGenerationPrompt = ai.definePrompt({
 
 The story should be between 5 and 7 pages long.
 
-Your story must be tailored to the student's grade level.
+Your story must be tailored to the student's grade level and written entirely in the following language: {{{language}}}.
 
 Topic: {{{topic}}}
 Grade Level: {{{grade}}}
 
-Generate a title for the story and then generate the content for each page. For each page, provide the story text and a detailed prompt for an illustrator to create a vibrant, simple, and educational illustration that matches the text.`,
+Generate a title for the story and then generate the content for each page. For each page, provide the story text and a detailed prompt for an illustrator to create a vibrant, simple, and educational illustration that matches the text. The illustration prompt does not need to be in the target language.`,
 });
 
 
