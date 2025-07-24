@@ -10,7 +10,6 @@ type SessionStatus = "disconnected" | "connecting" | "connected" | "error";
 
 export function LiveAgent() {
   const [status, setStatus] = useState<SessionStatus>("disconnected");
-  const [isRecording, setIsRecording] = useState(false);
   const [responseText, setResponseText] = useState("");
   const { toast } = useToast();
 
@@ -25,7 +24,9 @@ export function LiveAgent() {
       // Cleanup on component unmount
       sessionRef.current?.close();
       mediaRecorderRef.current?.stop();
-      audioContextRef.current?.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
     };
   }, []);
 
@@ -38,7 +39,6 @@ export function LiveAgent() {
 
     if (audioData && audioContextRef.current) {
       try {
-        // The audio from the API is raw PCM, so we need to wrap it in a WAV header
         const wavBuffer = createWavBuffer(audioData);
         const audioBuffer = await audioContextRef.current.decodeAudioData(wavBuffer);
         const source = audioContextRef.current.createBufferSource();
@@ -107,15 +107,17 @@ export function LiveAgent() {
     return buffer;
 }
 
-
-  const connect = async () => {
+  const startSession = async () => {
     setStatus("connecting");
+    setResponseText("");
+    audioQueueRef.current = [];
+
     try {
         const ai = new GoogleGenAI({
             apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
         });
         
-        if (!audioContextRef.current) {
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
 
@@ -132,20 +134,20 @@ export function LiveAgent() {
                         audioQueueRef.current.push(audioData);
                         playNextInQueue();
                     }
-                    if (message.serverContent?.turnComplete) {
-                        if (isRecording) {
-                            stopRecording(true); // Stop recording but don't signal end of turn yet
-                        }
+                     if (message.serverContent?.turnComplete) {
+                        // The model has finished its turn. Reset response text for the next turn.
+                        setResponseText("");
                     }
                 },
-                onerror: (e: ErrorEvent) => {
+                onerror: (e: Error) => {
                     console.error('Gemini API Error:', e.message);
                     setStatus("error");
                     toast({ title: "Live Agent Error", description: e.message || 'An unknown error occurred with the AI.', variant: "destructive" });
+                    stopSession();
                 },
                 onclose: (e: CloseEvent) => {
+                    // This can be triggered by server or by client calling session.close()
                     setStatus("disconnected");
-                    setIsRecording(false);
                 },
             },
             config: {
@@ -158,27 +160,25 @@ export function LiveAgent() {
 
         sessionRef.current = newSession;
         setStatus("connected");
-        toast({ title: "Connected", description: "Ready to chat." });
+        startMicrophone();
+        toast({ title: "Connected", description: "You can start speaking now." });
+
     } catch (error) {
         console.error("Connection failed:", error);
         setStatus("error");
-        toast({ title: "Connection Error", description: "Could not connect to the live agent.", variant: "destructive" });
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        toast({ title: "Connection Error", description: `Could not connect to the live agent: ${errorMessage}`, variant: "destructive" });
     }
   };
 
-  const startRecording = async () => {
-    if (!sessionRef.current) {
-      toast({ title: "Not connected", description: "Please connect to the live agent first.", variant: "destructive" });
-      return;
-    }
-    setResponseText(""); // Clear bot response for new turn
-
+  const startMicrophone = async () => {
+    if (!sessionRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       
       mediaRecorderRef.current.ondataavailable = async (event) => {
-        if (event.data.size > 0 && sessionRef.current) {
+        if (event.data.size > 0 && sessionRef.current && status === 'connected') {
             const audioData = await event.data.arrayBuffer();
             const base64Audio = Buffer.from(audioData).toString('base64');
             sessionRef.current.sendClientContent({
@@ -188,43 +188,41 @@ export function LiveAgent() {
       };
       
       mediaRecorderRef.current.start(500); // Send data every 500ms
-      setIsRecording(true);
     } catch (error) {
       console.error("Error accessing microphone:", error);
       toast({ title: "Microphone Error", description: "Could not access the microphone.", variant: "destructive" });
+      stopSession();
     }
   };
 
-  const stopRecording = (isTurnComplete = false) => {
-    mediaRecorderRef.current?.stop();
-    // Signal end of user audio input if it's not the model signaling turn completion
-    if (sessionRef.current && !isTurnComplete) {
-        sessionRef.current.sendClientContent({ turns: [] });
+  const stopSession = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
-    setIsRecording(false);
+    if (sessionRef.current) {
+        sessionRef.current.close();
+        sessionRef.current = null;
+    }
+    setStatus("disconnected");
   };
 
   const handleMicClick = () => {
-    if (status !== 'connected') {
-        connect();
-        return;
-    }
-
-    if (isRecording) {
-      stopRecording();
+    if (status === 'connected') {
+      stopSession();
     } else {
-      startRecording();
+      startSession();
     }
   };
 
   const getStatusInfo = () => {
     switch (status) {
       case "disconnected":
-        return { text: "Click to Connect", icon: <Mic className="h-10 w-10" />, color: "text-foreground" };
+        return { text: "Start Live Chat", icon: <Mic className="h-10 w-10" />, color: "text-foreground" };
       case "connecting":
         return { text: "Connecting...", icon: <Loader2 className="h-10 w-10 animate-spin" />, color: "text-blue-500" };
       case "connected":
-        return { text: isRecording ? "Listening..." : "Click to Speak", icon: isRecording ? <MicOff className="h-10 w-10" /> : <Mic className="h-10 w-10" />, color: isRecording ? "text-red-500" : "text-green-500" };
+        return { text: "Listening... (Click to Stop)", icon: <MicOff className="h-10 w-10" />, color: "text-red-500" };
       case "error":
         return { text: "Connection Error", icon: <ServerCrash className="h-10 w-10" />, color: "text-destructive" };
     }
