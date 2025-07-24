@@ -119,7 +119,7 @@ const futureResearchSuggesterTool = ai.defineTool(
             .replace('__RECENT_PAPERS__', JSON.stringify(recentPapers, null, 2));
 
         const llmResponse = await ai.generate({
-            model: 'googleai/gemini-2.0-flash',
+            model: 'googleai/gemini-1.5-pro',
             prompt: promptWithData,
             output: {
                 schema: z.object({
@@ -188,7 +188,7 @@ const academicCoordinatorFlow = ai.defineFlow(
       prompt: `Please perform the tasks outlined in the system prompt for the topic: "${input.topic}"`,
       system: coordinatorSystemPrompt,
       tools: [recentPapersSearchTool, futureResearchSuggesterTool],
-      model: 'googleai/gemini-2.0-flash',
+      model: 'googleai/gemini-1.5-pro',
     });
 
     return {
