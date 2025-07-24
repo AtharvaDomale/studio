@@ -80,27 +80,38 @@ const researchAgentFlow = ai.defineFlow(
     outputSchema: ResearchAgentOutputSchema,
   },
   async (input) => {
-
-    const llmResponse = await ai.generate({
-        prompt: `Please provide a detailed research report on the topic: "${input.topic}".
-        
-        Your task is to:
-        1.  Use the web search tool to find relevant information on the topic.
-        2.  Synthesize the information from the search results into a comprehensive report.
-        3.  The report should be well-structured, easy to read, and formatted in Markdown. It should include sections like Introduction, Key Concepts, and Conclusion.
-        4.  Extract the titles and URLs from the search results you used and include them in the 'sources' field of the final output.`,
-        output: {
-            schema: ResearchAgentOutputSchema,
-        },
-        tools: [webSearchTool],
+    // Step 1: Use the tool to perform the search.
+    const searchResponse = await ai.generate({
+      prompt: `Use the web search tool to find information about "${input.topic}".`,
+      tools: [webSearchTool],
+      model: 'googleai/gemini-2.0-flash', // Specify a model that supports tool use.
     });
-
-    const output = llmResponse.output;
-
-    if (!output) {
-        throw new Error("The research agent failed to generate a report.");
+    
+    const searchResults = searchResponse.toolCalls(webSearchTool.name).map(call => call.output) as SearchResult[][];
+    const flatResults = searchResults.flat();
+    
+    if (flatResults.length === 0) {
+      return {
+        report: "I couldn't find any information on that topic. Please try a different query.",
+        sources: [],
+      };
     }
 
-    return output;
+    // Step 2: Synthesize the results into a report.
+    const synthesisPrompt = `You are a research analyst. Synthesize the following search results into a comprehensive report on the topic: "${input.topic}".
+    The report should be well-structured, easy to read, and formatted in Markdown. It should include sections like Introduction, Key Concepts, and Conclusion.
+    
+    Search Results:
+    ${flatResults.map(r => `### ${r.title}\n**URL:** ${r.url}\n**Snippet:** ${r.snippet}`).join('\n\n')}
+    `;
+
+    const synthesisResponse = await ai.generate({
+      prompt: synthesisPrompt,
+    });
+
+    return {
+      report: synthesisResponse.text,
+      sources: flatResults.map(r => ({ title: r.title, url: r.url })),
+    };
   }
 );
