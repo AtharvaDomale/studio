@@ -4,7 +4,7 @@
 import { gradeExamPaper, ExamGraderOutput } from "@/ai/flows/exam-grader";
 import { saveGradingResult } from "@/services/student-service";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
