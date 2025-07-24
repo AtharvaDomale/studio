@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { tool } from 'genkit';
+import { tool } from '@genkit-ai/ai';
 
 // Define the schema for the web search tool's output.
 const SearchResultSchema = z.object({
@@ -79,10 +79,6 @@ const researchAgentFlow = ai.defineFlow(
     name: 'researchAgentFlow',
     inputSchema: ResearchAgentInputSchema,
     outputSchema: ResearchAgentOutputSchema,
-    config: {
-        // Provide the tool to the model.
-        tools: [webSearchTool],
-    }
   },
   async (input) => {
 
@@ -97,6 +93,7 @@ const researchAgentFlow = ai.defineFlow(
         output: {
             schema: ResearchAgentOutputSchema,
         },
+        tools: [webSearchTool],
     });
 
     const output = llmResponse.output;
