@@ -36,6 +36,17 @@ export interface QuizResult {
     savedAt: Timestamp;
 }
 
+export interface GradingResult {
+    studentName: string;
+    className: string;
+    subject: string;
+    examTopic: string;
+    score: number;
+    totalMarks: number;
+    feedback: string;
+    gradedAt: Timestamp;
+}
+
 export async function addStudent(name: string, className: string, accommodations?: string[], lastPositiveNote?: string): Promise<string> {
     try {
         const docRef = await addDoc(collection(db, "students"), {
@@ -128,5 +139,18 @@ export async function getStudentResults(studentId: string): Promise<QuizResult[]
     } catch (e) {
         console.error("Error getting student results: ", e);
         throw new Error("Could not retrieve student results.");
+    }
+}
+
+export async function saveGradingResult(result: Omit<GradingResult, 'gradedAt'>): Promise<string> {
+    try {
+        const docRef = await addDoc(collection(db, "gradingResults"), {
+            ...result,
+            gradedAt: Timestamp.now(),
+        });
+        return docRef.id;
+    } catch (e) {
+        console.error("Error saving grading result: ", e);
+        throw new Error("Could not save grading result.");
     }
 }

@@ -1,6 +1,6 @@
 
 
-import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard } from 'lucide-react';
+import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard, ScanLine } from 'lucide-react';
 import { ExplainerTool } from '@/components/explainer-tool';
 import { WeeklyPlanner } from '@/components/weekly-planner';
 import { ImageGenerator } from '@/components/image-generator';
@@ -10,6 +10,7 @@ import { StorybookGenerator } from '@/components/storybook-generator';
 import { LessonCreator } from '@/components/lesson-creator';
 import { AnimatedStorybook } from '@/components/animated-storybook';
 import { ToolCard } from '@/components/tool-card';
+import { ExamGrader } from '@/components/exam-grader';
 
 const tools = [
   {
@@ -18,6 +19,13 @@ const tools = [
     title: 'AI Lesson Creator',
     description: 'Generate a complete lesson plan by orchestrating multiple AI agents.',
     component: <LessonCreator />,
+  },
+  {
+    id: 'exam-grader',
+    icon: ScanLine,
+    title: 'AI Exam Grader',
+    description: 'Upload a handwritten exam paper and let AI grade it and provide feedback.',
+    component: <ExamGrader />,
   },
   {
     id: 'explainer',
