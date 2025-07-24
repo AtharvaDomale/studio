@@ -22,7 +22,6 @@ const formSchema = z.object({
   grade: z.string({ required_error: "Please select a grade level." }),
   subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
   image: z.string().optional(),
-  model: z.string().default('veo-3.0-generate-preview'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,7 +38,6 @@ export function VideoGenerator() {
     defaultValues: { 
       prompt: "",
       subject: "",
-      model: "veo-3.0-generate-preview",
     },
   });
 
