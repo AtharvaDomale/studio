@@ -10,7 +10,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { teachingMethodExplainer } from './teaching-method-explainer';
 import { generateQuiz } from './student-quiz-generator';
 import { conceptImageGenerator } from './concept-image-generator';
@@ -28,7 +28,7 @@ const LessonPlanCreatorInputSchema = z.object({
 export type LessonPlanCreatorInput = z.infer<typeof LessonPlanCreatorInputSchema>;
 
 const LessonPlanCreatorOutputSchema = z.object({
-  lessonPlan: z.string().describe('The complete, synthesized lesson plan in Markdown format.'),
+  lessonPlan: z.string().describe('The complete, synthesized lesson plan.'),
   imageUrl: z.string().describe('A relevant image URL for the lesson.'),
 });
 export type LessonPlanCreatorOutput = z.infer<typeof LessonPlanCreatorOutputSchema>;
@@ -74,7 +74,7 @@ const lessonPlanCreatorFlow = ai.defineFlow(
     // Step 2: Synthesize the results into a comprehensive lesson plan
     console.log('Synthesizing results from all agents...');
     const synthesisPromptText = `You are a master educator responsible for creating a final, comprehensive lesson plan.
-    You have received input from several specialized AI agents. Your task is to synthesize this information into a single, cohesive, and well-structured lesson plan document in Markdown format.
+    You have received input from several specialized AI agents. Your task is to synthesize this information into a single, cohesive, and well-structured lesson plan document.
     If an image was provided as part of the input, make sure to incorporate it into the lesson plan, for example by creating activities or discussion points around it.
 
     Topic: ${input.topic}
@@ -97,7 +97,7 @@ const lessonPlanCreatorFlow = ai.defineFlow(
     - The assessment quiz you've received. Please reformat the quiz from JSON into a readable list of questions with options and clearly mark the correct answer.
     - A concluding summary.
 
-    Format the entire output as a clean, readable Markdown document.`;
+    Format the entire output as a clean, readable document. Use headings, lists, and bold text for structure. Do NOT use markdown code blocks (\`\`\`).`;
 
     const prompt: (string | MediaPart)[] = [{ text: synthesisPromptText }];
     if (input.image) {
