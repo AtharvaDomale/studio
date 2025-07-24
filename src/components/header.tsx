@@ -1,4 +1,4 @@
-import { BrainCircuit, LayoutDashboard, Wrench } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, Rss, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 
@@ -14,6 +14,12 @@ export function Header() {
             <Link href="/" prefetch={false}>
                 <LayoutDashboard className="mr-2" />
                 Dashboard
+            </Link>
+        </Button>
+        <Button asChild variant="ghost">
+            <Link href="/agents" prefetch={false}>
+                <Rss className="mr-2" />
+                Agents
             </Link>
         </Button>
         <Button asChild variant="ghost">
