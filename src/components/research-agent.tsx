@@ -1,7 +1,7 @@
 
 "use client";
 
-import { runResearchAgent, ResearchAgentOutput } from "@/ai/flows/research-agent";
+import { runAcademicResearchAgent, AcademicResearchAgentOutput } from "@/ai/flows/research-agent";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,8 +23,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function ResearchAgent() {
-  const [result, setResult] = useState<ResearchAgentOutput | null>(null);
+export function AcademicResearchAgent() {
+  const [result, setResult] = useState<AcademicResearchAgentOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -37,7 +37,7 @@ export function ResearchAgent() {
     setIsLoading(true);
     setResult(null);
     try {
-      const output = await runResearchAgent(data);
+      const output = await runAcademicResearchAgent(data);
       setResult(output);
     } catch (error) {
       console.error(error);
@@ -60,9 +60,9 @@ export function ResearchAgent() {
             name="topic"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Research Topic</FormLabel>
+                <FormLabel>Academic Research Topic</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="e.g., The impact of artificial intelligence on education, The history of the Silk Road..." {...field} rows={3} />
+                  <Textarea placeholder="e.g., The impact of quantum computing on cryptography, The role of social media in political discourse..." {...field} rows={3} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -79,7 +79,7 @@ export function ResearchAgent() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Research Report</CardTitle>
+              <CardTitle>Academic Report</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -100,14 +100,14 @@ export function ResearchAgent() {
             </CardContent>
           </Card>
 
-          {result?.sources && result.sources.length > 0 && (
+          {result?.references && result.references.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Sources</CardTitle>
+                <CardTitle>References</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  {result.sources.map((source, index) => (
+                <ul className="space-y-2 list-decimal pl-5">
+                  {result.references.map((source, index) => (
                     <li key={index} className="text-sm">
                       <Link href={source.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                         {source.title}

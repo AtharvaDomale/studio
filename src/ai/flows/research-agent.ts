@@ -2,10 +2,10 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that conducts research on a given topic.
+ * @fileOverview An AI agent that conducts academic research on a given topic.
  *
  * This agent uses a web search tool to gather information and then synthesizes
- * it into a structured report.
+ * it into a structured academic report.
  */
 
 import { ai } from '@/ai/genkit';
@@ -20,69 +20,69 @@ const SearchResultSchema = z.object({
 type SearchResult = z.infer<typeof SearchResultSchema>;
 
 // Define the input for the research agent.
-const ResearchAgentInputSchema = z.object({
-  topic: z.string().describe('The topic to research.'),
+const AcademicResearchAgentInputSchema = z.object({
+  topic: z.string().describe('The academic topic to research.'),
 });
-export type ResearchAgentInput = z.infer<typeof ResearchAgentInputSchema>;
+export type AcademicResearchAgentInput = z.infer<typeof AcademicResearchAgentInputSchema>;
 
 // Define the output for the research agent.
-const ResearchAgentOutputSchema = z.object({
-  report: z.string().describe('A structured research report in Markdown format.'),
-  sources: z.array(z.object({
+const AcademicResearchAgentOutputSchema = z.object({
+  report: z.string().describe('A structured academic research report in Markdown format.'),
+  references: z.array(z.object({
       title: z.string(),
       url: z.string().url(),
-  })).describe('A list of sources used for the report.'),
+  })).describe('A list of academic sources used for the report.'),
 });
-export type ResearchAgentOutput = z.infer<typeof ResearchAgentOutputSchema>;
+export type AcademicResearchAgentOutput = z.infer<typeof AcademicResearchAgentOutputSchema>;
 
-// Define a mock web search tool.
+// Define a mock web search tool that returns academic-style results.
 const webSearchTool = ai.defineTool(
   {
-    name: 'webSearch',
-    description: 'Performs a web search for the given query and returns a list of results.',
+    name: 'academicWebSearch',
+    description: 'Performs a web search for the given query and returns a list of academic-focused results.',
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(SearchResultSchema),
   },
   async ({ query }) => {
-    console.log(`Performing mock search for: ${query}`);
-    // In a real application, this would call a search API (e.g., Google Search, Bing, etc.).
-    // For this prototype, we'll return a set of mock results.
+    console.log(`Performing mock academic search for: ${query}`);
+    // In a real application, this would call a specialized search API (e.g., Google Scholar, Semantic Scholar).
+    // For this prototype, we'll return a set of mock academic results.
     return [
       {
-        title: `The Ultimate Guide to ${query}`,
-        url: `https://example.com/guide-to-${query.toLowerCase().replace(/\s+/g, '-')}`,
-        snippet: `An in-depth article covering all aspects of ${query}, from its history to its modern applications. A must-read for anyone interested in the topic.`,
+        title: `The Foundational Principles of ${query}`,
+        url: `https://arxiv.org/abs/2401.12345`,
+        snippet: `A foundational paper on ${query} published in a leading academic journal, exploring its theoretical underpinnings and implications for future research.`,
       },
       {
-        title: `A Beginner's Introduction to ${query}`,
-        url: `https://example.com/intro-to-${query.toLowerCase().replace(/\s+/g, '-')}`,
-        snippet: `New to ${query}? This article breaks down the basics in an easy-to-understand way, with helpful examples and illustrations.`,
+        title: `A Longitudinal Study on the Effects of ${query}`,
+        url: `https://www.jstor.org/stable/12345`,
+        snippet: `This study, conducted over ten years, provides empirical evidence on the long-term impact of ${query} in a controlled environment.`,
       },
       {
-        title: `${query} - Wikipedia`,
-        url: `https://en.wikipedia.org/wiki/${query.replace(/\s+/g, '_')}`,
-        snippet: `The official Wikipedia entry for ${query}, providing a comprehensive overview, historical context, and links to related subjects.`,
+        title: `Cross-Disciplinary Applications of ${query}`,
+        url: `https://www.university.edu/research/paper-on-${query.toLowerCase().replace(/\s+/g, '-')}`,
+        snippet: `A university research paper that details the novel applications of ${query} in fields ranging from computer science to sociology.`,
       },
     ];
   }
 );
 
 // The main exported function that clients will call.
-export async function runResearchAgent(input: ResearchAgentInput): Promise<ResearchAgentOutput> {
-  return researchAgentFlow(input);
+export async function runAcademicResearchAgent(input: AcademicResearchAgentInput): Promise<AcademicResearchAgentOutput> {
+  return academicResearchAgentFlow(input);
 }
 
 
-const researchAgentFlow = ai.defineFlow(
+const academicResearchAgentFlow = ai.defineFlow(
   {
-    name: 'researchAgentFlow',
-    inputSchema: ResearchAgentInputSchema,
-    outputSchema: ResearchAgentOutputSchema,
+    name: 'academicResearchAgentFlow',
+    inputSchema: AcademicResearchAgentInputSchema,
+    outputSchema: AcademicResearchAgentOutputSchema,
   },
   async (input) => {
     // Step 1: Use the tool to perform the search.
     const searchResponse = await ai.generate({
-      prompt: `Use the web search tool to find information about "${input.topic}".`,
+      prompt: `Use the academic web search tool to find information about "${input.topic}".`,
       tools: [webSearchTool],
       model: 'googleai/gemini-2.0-flash', // Specify a model that supports tool use.
     });
@@ -92,14 +92,21 @@ const researchAgentFlow = ai.defineFlow(
     
     if (flatResults.length === 0) {
       return {
-        report: "I couldn't find any information on that topic. Please try a different query.",
-        sources: [],
+        report: "I couldn't find any academic information on that topic. Please try a different query.",
+        references: [],
       };
     }
 
-    // Step 2: Synthesize the results into a report.
-    const synthesisPrompt = `You are a research analyst. Synthesize the following search results into a comprehensive report on the topic: "${input.topic}".
-    The report should be well-structured, easy to read, and formatted in Markdown. It should include sections like Introduction, Key Concepts, and Conclusion.
+    // Step 2: Synthesize the results into an academic report.
+    const synthesisPrompt = `You are a research analyst specializing in creating academic summaries.
+    Synthesize the following search results into a formal academic report on the topic: "${input.topic}".
+    
+    The report must be well-structured, written in a formal academic tone, and formatted in Markdown. It must include the following sections:
+    1.  **Abstract**: A brief summary of the entire report.
+    2.  **Introduction**: Background and context of the topic.
+    3.  **Key Findings**: A synthesis of the main points from the search results, presented in a logical flow.
+    4.  **Conclusion**: A summary of the findings and potential implications or future research directions.
+    5.  **References**: A list of the sources used.
     
     Search Results:
     ${flatResults.map(r => `### ${r.title}\n**URL:** ${r.url}\n**Snippet:** ${r.snippet}`).join('\n\n')}
@@ -111,7 +118,7 @@ const researchAgentFlow = ai.defineFlow(
 
     return {
       report: synthesisResponse.text,
-      sources: flatResults.map(r => ({ title: r.title, url: r.url })),
+      references: flatResults.map(r => ({ title: r.title, url: r.url })),
     };
   }
 );
