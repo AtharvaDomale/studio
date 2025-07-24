@@ -17,12 +17,14 @@ import { z } from "zod";
 import { Skeleton } from "./ui/skeleton";
 import ReactMarkdown from 'react-markdown';
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
   className: z.string().min(2, "Class name is required."),
   examTopic: z.string().min(5, "Exam topic is required."),
   subject: z.string().min(2, "Subject is required."),
   totalMarks: z.coerce.number().int().min(1, "Total marks must be at least 1."),
+  answerKey: z.string().min(10, "The answer key is required."),
   examImage: z.string({ required_error: "An image of the exam paper is required." }),
 });
 
@@ -41,7 +43,7 @@ export function ExamGrader() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { className: "", examTopic: "", subject: "", totalMarks: 100 },
+    defaultValues: { className: "", examTopic: "", subject: "", totalMarks: 100, answerKey: "" },
   });
   
   useEffect(() => {
@@ -166,6 +168,16 @@ export function ExamGrader() {
               <FormField control={form.control} name="examTopic" render={({ field }) => ( <FormItem><FormLabel>Exam Topic</FormLabel><FormControl><Input placeholder="e.g., Algebra II Final" {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="totalMarks" render={({ field }) => ( <FormItem><FormLabel>Total Marks</FormLabel><FormControl><Input type="number" placeholder="e.g., 100" {...field} /></FormControl><FormMessage /></FormItem> )} />
             </div>
+
+            <FormField control={form.control} name="answerKey" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Answer Key</FormLabel>
+                    <FormControl>
+                        <Textarea placeholder="Paste the exam questions and correct answers here..." {...field} rows={6} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )} />
 
             <FormField control={form.control} name="examImage" render={({ field }) => (
                 <FormItem>

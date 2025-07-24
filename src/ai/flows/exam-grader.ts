@@ -6,7 +6,7 @@
  *
  * This file contains a coordinator agent that orchestrates two sub-agents:
  * 1. Image Analysis Agent: Performs OCR on an exam paper image to extract text.
- * 2. Evaluation Agent: Grades the extracted text and provides feedback.
+ * 2. Evaluation Agent: Grades the extracted text against a provided answer key.
  */
 
 import { ai } from '@/ai/genkit';
@@ -59,36 +59,42 @@ const imageAnalysisTool = ai.defineTool(
 // == Sub-agent Tool 2: Evaluation ==
 const EvaluationOutputSchema = z.object({
     score: z.number().describe("The calculated score for the exam."),
-    feedback: z.string().describe("Constructive feedback and performance analysis for the student."),
+    feedback: z.string().describe("Constructive feedback and performance analysis for the student, referencing the answer key."),
 });
 
 const evaluationTool = ai.defineTool(
     {
         name: 'evaluationTool',
-        description: 'Evaluates the student\'s extracted answers, calculates a score, and provides feedback.',
+        description: 'Evaluates the student\'s extracted answers against a provided answer key, calculates a score, and provides feedback.',
         inputSchema: z.object({
             examTopic: z.string(),
             subject: z.string(),
             totalMarks: z.number(),
             extractedText: z.string(),
+            answerKey: z.string().describe("The ground truth questions and answers for the exam."),
         }),
         outputSchema: EvaluationOutputSchema,
     },
-    async ({ examTopic, subject, totalMarks, extractedText }) => {
-        console.log("Evaluation Tool: Starting grading process.");
+    async ({ examTopic, subject, totalMarks, extractedText, answerKey }) => {
+        console.log("Evaluation Tool: Starting grading process with answer key.");
 
         const prompt = `You are an expert teacher and examiner for the subject: ${subject}.
         You are grading an exam on the topic: "${examTopic}". The total marks possible are ${totalMarks}.
+
+        You MUST use the following answer key as the absolute source of truth for grading.
+        --- ANSWER KEY ---
+        ${answerKey}
+        --- END ANSWER KEY ---
         
         Below is the OCR-extracted text from a student's exam paper.
-        ---
+        --- STUDENT'S ANSWERS ---
         ${extractedText}
-        ---
+        --- END STUDENT'S ANSWERS ---
 
         Your task is to:
-        1.  Carefully evaluate the student's answers based on the provided text.
-        2.  Determine a fair score out of ${totalMarks}. Assume a standard marking scheme for the topic.
-        3.  Write constructive, personalized feedback. This should include what the student did well, where they made mistakes, and specific, actionable suggestions for improvement.
+        1.  Carefully compare the student's answers to the provided answer key. Award partial marks where appropriate.
+        2.  Determine a fair score out of ${totalMarks} based ONLY on the comparison with the answer key.
+        3.  Write constructive, personalized feedback. This should include what the student did well, where they made mistakes (referencing the correct answers from the key), and specific, actionable suggestions for improvement.
         
         Provide only the score and the feedback.`;
 
@@ -115,6 +121,7 @@ const ExamGraderInputSchema = z.object({
   className: z.string(),
   subject: z.string(),
   totalMarks: z.number(),
+  answerKey: z.string().describe("The questions and correct answers for the exam."),
   examImage: z.string().describe("The exam paper image as a data URI."),
 });
 export type ExamGraderInput = z.infer<typeof ExamGraderInputSchema>;
@@ -153,6 +160,7 @@ const examGraderFlow = ai.defineFlow(
         subject: input.subject,
         totalMarks: input.totalMarks,
         extractedText: analysisResult.extractedText,
+        answerKey: input.answerKey,
     });
 
     // Step 3: Synthesize and return the final result.
