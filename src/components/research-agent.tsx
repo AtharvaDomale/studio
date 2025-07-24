@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import ReactMarkdown from 'react-markdown';
 import { Skeleton } from "./ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
