@@ -61,7 +61,7 @@ export function GmailAssistant() {
               <FormItem>
                 <FormLabel>Your Request</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="e.g., Summarize my last 3 unread emails. or Draft an email to 'test@example.com' with the subject 'Hello' and body 'This is a test.'" {...field} rows={3} />
+                  <Textarea placeholder="e.g., Send a reminder to the team about the meeting tomorrow at 10am." {...field} rows={3} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

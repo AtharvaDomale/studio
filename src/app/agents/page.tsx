@@ -32,8 +32,8 @@ export default function AgentsPage() {
                 <CardHeader className="flex flex-row items-center gap-4">
                     <Mail className="h-8 w-8 text-primary" />
                     <div>
-                        <CardTitle>Gmail Assistant (via n8n MCP)</CardTitle>
-                        <CardDescription>Use an agent that connects to an external n8n workflow to interact with your Gmail account.</CardDescription>
+                        <CardTitle>Gmail Assistant (via n8n Webhook)</CardTitle>
+                        <CardDescription>Use an agent that sends your prompt to an external n8n workflow to interact with your Gmail account.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
