@@ -53,6 +53,12 @@ const gmailAssistantFlow = ai.defineFlow(
     });
 
     const toolCalls = llmResponse.toolCalls;
+    
+    // Log the tool calls to the console for visibility
+    if (toolCalls && toolCalls.length > 0) {
+      console.log('Tool call(s) made:', JSON.stringify(toolCalls, null, 2));
+    }
+
     // If the model made a tool call, return the output of the first tool call.
     if (toolCalls && toolCalls.length > 0) {
       const toolOutput = toolCalls[0].output;
