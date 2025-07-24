@@ -8,7 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const N8N_GMAIL_WEBHOOK_URL = 'https://n8n-aptask-com-u23220.vm.elestio.app/webhook/a9d5b0c7-5c6f-4a3b-8d1e-2f7b1n9c3a0b'; // Placeholder URL
+const N8N_GMAIL_WEBHOOK_URL = 'https://n8n-aptask-com-u23220.vm.elestio.app/webhook/4009c9dc-dddd-47d3-b4a4-23de4bd518b3';
 
 // Define the tool that will post data to the n8n webhook.
 const sendTextToGmailWebhook = ai.defineTool(
