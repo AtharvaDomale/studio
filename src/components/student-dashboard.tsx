@@ -304,38 +304,36 @@ export function StudentDashboard() {
               <Loader2 className="animate-spin text-primary h-8 w-8" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {students.map((student) => (
-                    <Card key={student.id} className="flex flex-col">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                           <Avatar className="h-16 w-16">
+                    <Card key={student.id} className="flex flex-col text-center hover:shadow-lg transition-shadow duration-300">
+                        <CardContent className="flex-grow flex flex-col items-center p-6">
+                           <Avatar className="h-24 w-24 mb-4 border-4 border-muted">
                              <AvatarImage src={student.avatar} alt={student.name} data-ai-hint="person student" />
                              <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                            </Avatar>
-                           <div>
-                             <CardTitle>{student.name}</CardTitle>
-                             <CardDescription>{student.className}</CardDescription>
-                             <Badge variant={getStatusBadgeVariant(student.status)} className="mt-2">
-                               {getStatusIcon(student.status)}
+                           <h3 className="text-xl font-bold">{student.name}</h3>
+                           <p className="text-sm text-muted-foreground">{student.className}</p>
+                           <Badge variant={getStatusBadgeVariant(student.status)} className="mt-2 capitalize">
                                {student.status}
-                             </Badge>
-                           </div>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                           <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Avg. Score</span>
-                                <span className="font-semibold">{student.averageScore > 0 ? `${student.averageScore}%` : 'N/A'}</span>
-                           </div>
-                           <div className="flex justify-between items-center text-sm mt-2">
-                                <span className="text-muted-foreground">Quizzes</span>
-                                <span className="font-semibold">{student.quizzesCompleted}</span>
-                           </div>
-                            <div className="flex justify-between items-center text-sm mt-2">
-                                <span className="text-muted-foreground">Last Activity</span>
-                                <span className="font-semibold">{student.lastActivityDate}</span>
+                           </Badge>
+                           <Separator className="my-4"/>
+                           <div className="w-full grid grid-cols-3 gap-2 text-sm">
+                                <div className="text-center">
+                                    <p className="font-semibold text-lg">{student.averageScore > 0 ? `${student.averageScore}%` : 'N/A'}</p>
+                                    <p className="text-muted-foreground text-xs">Avg. Score</p>
+                                </div>
+                                 <div className="text-center">
+                                    <p className="font-semibold text-lg">{student.quizzesCompleted}</p>
+                                    <p className="text-muted-foreground text-xs">Quizzes</p>
+                                </div>
+                                 <div className="text-center">
+                                    <p className="font-semibold text-lg">{student.lastActivityDate.split('/')[0]}/{student.lastActivityDate.split('/')[1]}</p>
+                                    <p className="text-muted-foreground text-xs">Last Activity</p>
+                                </div>
                            </div>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="p-4">
                             <Button 
                                 variant="outline"
                                 className="w-full"
