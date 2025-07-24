@@ -44,6 +44,9 @@ const generateConceptVideoSceneFlow = ai.defineFlow(
     let {operation} = await ai.generate({
         model: googleAI.model('veo-3.0-generate-preview'),
         prompt: [{text: input.videoPrompt}],
+        config: {
+            responseModalities: ['VIDEO'],
+        }
     });
 
     if (!operation) {
