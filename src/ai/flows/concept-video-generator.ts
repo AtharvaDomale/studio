@@ -42,8 +42,12 @@ const generateConceptVideoSceneFlow = ai.defineFlow(
     const apiKey = process.env.GEMINI_API_KEY;
 
     let {operation} = await ai.generate({
-        model: googleAI.model('veo-3.0-generate-preview'),
-        prompt: [{text: input.videoPrompt}],
+        model: googleAI.model('veo-2.0-generate-001'),
+        prompt: input.videoPrompt,
+        config: {
+            durationSeconds: 8,
+            aspectRatio: '16:9',
+        },
     });
 
     if (!operation) {
