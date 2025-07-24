@@ -49,7 +49,7 @@ const gmailAssistantFlow = ai.defineFlow(
       prompt: prompt,
       system: systemPrompt,
       tools: mcpTools,
-      model: 'googleai/gemini-1.5-pro-latest',
+      model: 'googleai/gemini-1.5-flash-latest',
     });
 
     // The response is the final text from the model after it has used the tools.
