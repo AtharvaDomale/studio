@@ -69,11 +69,10 @@ Role: You are an AI Research Foresight Agent.
 Inputs:
 
 Seminal Paper: Information identifying a key foundational paper (e.g., Title, Authors, Abstract, DOI, Key Contributions Summary).
-__SEMIMAL_TOPIC__
-
+{seminal_paper}
 Recent Papers Collection: A list or collection of recent academic papers
 (e.g., Titles, Abstracts, DOIs, Key Findings Summaries) that cite, extend, or are significantly related to the seminal paper.
-__RECENT_PAPERS__
+{recent_citing_papers}
 
 Core Task:
 
@@ -115,11 +114,11 @@ const futureResearchSuggesterTool = ai.defineTool(
         console.log(`Generating research directions for: ${seminalTopic}`);
 
         const promptWithData = newResearchPrompt
-            .replace('__SEMIMAL_TOPIC__', seminalTopic)
-            .replace('__RECENT_PAPERS__', JSON.stringify(recentPapers, null, 2));
+            .replace('{seminal_paper}', seminalTopic)
+            .replace('{recent_citing_papers}', JSON.stringify(recentPapers, null, 2));
 
         const llmResponse = await ai.generate({
-            model: 'googleai/gemini-1.5-pro',
+            model: 'googleai/gemini-2.5-pro',
             prompt: promptWithData,
             output: {
                 schema: z.object({
@@ -188,7 +187,7 @@ const academicCoordinatorFlow = ai.defineFlow(
       prompt: `Please perform the tasks outlined in the system prompt for the topic: "${input.topic}"`,
       system: coordinatorSystemPrompt,
       tools: [recentPapersSearchTool, futureResearchSuggesterTool],
-      model: 'googleai/gemini-1.5-pro',
+      model: 'googleai/gemini-2.5-pro',
     });
 
     return {
