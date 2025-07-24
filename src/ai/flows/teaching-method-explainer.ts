@@ -44,13 +44,16 @@ const teachingMethodExplainerFlow = ai.defineFlow(
   async (input) => {
     const prompt: (string | MediaPart)[] = [
       {
-        text: `You are an experienced teacher. Given the lesson content, class grade, and subject, suggest simplified teaching methods. Analyze both the text and the image (if provided) to create your suggestions. The entire response must be in the following language: ${input.language}.
-        
+        text: `You are an experienced teacher. Given the lesson content, class grade, and subject, suggest a list of simplified and effective teaching methods.
+        Analyze both the text and the image (if provided) to create your suggestions.
+        The entire response must be in the following language: ${input.language}.
+        Format the output as a clean, readable document. Use Markdown headings, lists, and bold text for structure. Do NOT use markdown code blocks (\`\`\`).
+
         Lesson Content: ${input.content}
         Class Grade: ${input.grade}
         Subject: ${input.subject}
 
-        Suggest teaching methods tailored to the content and student level:
+        Here are some tailored teaching methods:
         `
       }
     ];
