@@ -69,10 +69,11 @@ Role: You are an AI Research Foresight Agent.
 Inputs:
 
 Seminal Paper: Information identifying a key foundational paper (e.g., Title, Authors, Abstract, DOI, Key Contributions Summary).
-{{{seminalTopic}}}
+__SEMIMAL_TOPIC__
+
 Recent Papers Collection: A list or collection of recent academic papers
 (e.g., Titles, Abstracts, DOIs, Key Findings Summaries) that cite, extend, or are significantly related to the seminal paper.
-{{{recentPapers}}}
+__RECENT_PAPERS__
 
 Core Task:
 
@@ -112,17 +113,18 @@ const futureResearchSuggesterTool = ai.defineTool(
     },
     async ({ seminalTopic, recentPapers }) => {
         console.log(`Generating research directions for: ${seminalTopic}`);
+
+        const promptWithData = newResearchPrompt
+            .replace('__SEMIMAL_TOPIC__', seminalTopic)
+            .replace('__RECENT_PAPERS__', JSON.stringify(recentPapers, null, 2));
+
         const llmResponse = await ai.generate({
             model: 'googleai/gemini-2.0-flash',
-            prompt: newResearchPrompt,
+            prompt: promptWithData,
             output: {
                 schema: z.object({
                     researchDirections: z.array(ResearchDirectionSchema)
                 })
-            },
-            templateData: {
-                seminalTopic: seminalTopic,
-                recentPapers: JSON.stringify(recentPapers, null, 2)
             }
         });
 
@@ -155,7 +157,6 @@ const academicCoordinatorFlow = ai.defineFlow(
     name: 'academicCoordinatorFlow',
     inputSchema: AcademicCoordinatorInputSchema,
     outputSchema: AcademicCoordinatorOutputSchema,
-    tools: [recentPapersSearchTool, futureResearchSuggesterTool],
   },
   async (input) => {
     // SYSTEM PROMPT FOR THE COORDINATOR
@@ -184,7 +185,9 @@ const academicCoordinatorFlow = ai.defineFlow(
     `;
 
     const llmResponse = await ai.generate({
-      prompt: coordinatorSystemPrompt,
+      prompt: `Please perform the tasks outlined in the system prompt for the topic: "${input.topic}"`,
+      system: coordinatorSystemPrompt,
+      tools: [recentPapersSearchTool, futureResearchSuggesterTool],
       model: 'googleai/gemini-2.0-flash',
     });
 
