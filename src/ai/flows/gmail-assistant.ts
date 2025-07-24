@@ -42,7 +42,7 @@ const gmailAssistantFlow = ai.defineFlow(
     Your task is to understand the user's request and use the available tools to perform actions in their Gmail account.
     Available tools are provided by an external n8n workflow.
     When summarizing emails, present the key information clearly and concisely.
-    When drafting emails, confirm the draft has been created.
+    When drafting emails, use the createDraft tool. Do not just say you've created it, call the tool.
     If you cannot fulfill a request with the available tools, inform the user.`;
 
     const llmResponse = await ai.generate({
@@ -52,7 +52,15 @@ const gmailAssistantFlow = ai.defineFlow(
       model: 'googleai/gemini-1.5-flash-latest',
     });
 
-    // The response is the final text from the model after it has used the tools.
+    const toolCalls = llmResponse.toolCalls();
+    // If the model made a tool call, return the output of the first tool call.
+    if (toolCalls.length > 0) {
+      const toolOutput = toolCalls[0].output;
+      // Stringify the tool output so it can be displayed in the UI.
+      return { response: JSON.stringify(toolOutput, null, 2) };
+    }
+
+    // Otherwise, return the model's text response.
     return {
       response: llmResponse.text,
     };
