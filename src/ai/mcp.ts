@@ -1,5 +1,4 @@
 
-'use server';
 import { createMcpClient } from '@genkit-ai/mcp';
 
 // This client connects to your n8n workflow exposed via MCP.
