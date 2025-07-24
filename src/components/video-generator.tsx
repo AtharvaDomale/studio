@@ -28,6 +28,7 @@ type FormValues = z.infer<typeof formSchema>;
 type SceneState = {
   sceneTitle: string;
   videoPrompt: string;
+  explanation: string;
   data?: GenerateConceptVideoSceneOutput;
   status: 'pending' | 'loading' | 'done' | 'error';
   errorMessage?: string;
@@ -63,6 +64,7 @@ export function VideoGenerator() {
       setScenes(analysisResult.scenes.map(s => ({
         sceneTitle: s.sceneTitle,
         videoPrompt: s.videoPrompt,
+        explanation: s.explanation,
         status: 'pending',
       })));
       setIsGenerating(true); // Trigger asset generation
@@ -192,6 +194,9 @@ export function VideoGenerator() {
                     <CarouselItem key={index}>
                     <div className="p-1 h-full">
                         <div className="flex flex-col h-full p-4 border rounded-lg bg-muted gap-4">
+                            <p className="text-lg text-center font-semibold text-foreground leading-relaxed">
+                                {index + 1}. {scene.sceneTitle}
+                            </p>
                             <div className="relative w-full aspect-video rounded-md overflow-hidden bg-black/80 flex items-center justify-center">
                                 {scene.status === 'done' && scene.data?.videoUrl ? (
                                     <video src={scene.data.videoUrl} className="w-full h-full object-contain" loop autoPlay muted>
@@ -205,8 +210,8 @@ export function VideoGenerator() {
                                     </div>
                                 )}
                             </div>
-                            <p className="text-base text-center font-medium text-foreground leading-relaxed h-12 overflow-y-auto p-1">
-                                {index + 1}. {scene.sceneTitle}
+                             <p className="text-sm text-foreground leading-relaxed h-24 overflow-y-auto p-2 bg-background rounded-md">
+                                {scene.explanation}
                             </p>
                         </div>
                     </div>

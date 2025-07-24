@@ -12,7 +12,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import {MediaPart} from 'genkit';
 
 const GenerateConceptVideoSceneInputSchema = z.object({
   videoPrompt: z.string().describe('A detailed prompt for the video generation model.'),
@@ -43,12 +42,8 @@ const generateConceptVideoSceneFlow = ai.defineFlow(
     const apiKey = process.env.GEMINI_API_KEY;
 
     let {operation} = await ai.generate({
-        model: googleAI.model('veo-2.0-generate-001'),
+        model: googleAI.model('veo-3.0-generate-preview'),
         prompt: [{text: input.videoPrompt}],
-        config: {
-            durationSeconds: 8,
-            aspectRatio: '16:9',
-        },
     });
 
     if (!operation) {
