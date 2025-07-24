@@ -1,5 +1,5 @@
 
-import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard, Sparkles } from 'lucide-react';
+import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard } from 'lucide-react';
 import { ExplainerTool } from '@/components/explainer-tool';
 import { WeeklyPlanner } from '@/components/weekly-planner';
 import { ImageGenerator } from '@/components/image-generator';
@@ -9,7 +9,6 @@ import { Header } from '@/components/header';
 import { StorybookGenerator } from '@/components/storybook-generator';
 import { LessonCreator } from '@/components/lesson-creator';
 import { AnimatedStorybook } from '@/components/animated-storybook';
-import { GeneralAssistant } from '@/components/general-assistant';
 import { ToolCard } from '@/components/tool-card';
 
 const tools = [
@@ -68,13 +67,6 @@ const tools = [
     title: 'Animated Storybook',
     description: 'Turn any story into an animated video with narration and illustrations.',
     component: <AnimatedStorybook />,
-  },
-  {
-    id: 'assistant',
-    icon: Sparkles,
-    title: 'General Assistant',
-    description: 'Your AI assistant for tasks like scheduling, sending emails, or taking notes.',
-    component: <GeneralAssistant />,
   },
 ];
 
