@@ -10,7 +10,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { tool } from '@genkit-ai/ai';
 
 // Define the schema for the web search tool's output.
 const SearchResultSchema = z.object({
@@ -37,7 +36,7 @@ const ResearchAgentOutputSchema = z.object({
 export type ResearchAgentOutput = z.infer<typeof ResearchAgentOutputSchema>;
 
 // Define a mock web search tool.
-const webSearchTool = tool(
+const webSearchTool = ai.defineTool(
   {
     name: 'webSearch',
     description: 'Performs a web search for the given query and returns a list of results.',
