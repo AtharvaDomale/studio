@@ -1,86 +1,108 @@
 
 "use client";
-import { conceptVideoGenerator, ConceptVideoGeneratorOutput } from "@/ai/flows/concept-video-generator";
+import { analyzeConceptForVideo, ConceptAnalysis } from "@/ai/flows/concept-analyzer";
+import { generateConceptVideoScene, GenerateConceptVideoSceneOutput } from "@/ai/flows/concept-video-generator";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileImage, Loader2 } from "lucide-react";
-import Image from "next/image";
-import { useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { OutputActions } from "./output-actions";
 
 const formSchema = z.object({
-  prompt: z.string().min(10, { message: "Prompt must be at least 10 characters." }),
+  concept: z.string().min(10, { message: "Concept must be at least 10 characters." }),
   grade: z.string({ required_error: "Please select a grade level." }),
   subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
   language: z.string().min(2, { message: "Language is required."}),
-  image: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
+type SceneState = {
+  sceneTitle: string;
+  videoPrompt: string;
+  data?: GenerateConceptVideoSceneOutput;
+  status: 'pending' | 'loading' | 'done' | 'error';
+  errorMessage?: string;
+};
+
 export function VideoGenerator() {
-  const [result, setResult] = useState<ConceptVideoGeneratorOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [analysis, setAnalysis] = useState<ConceptAnalysis | null>(null);
+  const [scenes, setScenes] = useState<SceneState[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { 
-      prompt: "",
-      subject: "",
-      language: "English",
-    },
+    defaultValues: { concept: "", subject: "", language: "English" },
   });
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        form.setValue("image", dataUrl);
-        setPreviewImage(dataUrl);
-      };
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    if (analysis && isGenerating) {
+        generateAllScenes();
     }
-  };
+  }, [analysis, isGenerating]);
+
 
   async function onSubmit(data: FormValues) {
-    setIsLoading(true);
-    setResult(null);
-    
+    setIsAnalyzing(true);
+    setAnalysis(null);
+    setScenes([]);
+    setIsGenerating(false);
     try {
-      const output = await conceptVideoGenerator(data);
-      
-      if (output.videoUrl) {
-        setResult(output);
-      } else {
-        throw new Error("The AI failed to generate the video.");
-      }
+      const analysisResult = await analyzeConceptForVideo(data);
+      setAnalysis(analysisResult);
+      setScenes(analysisResult.scenes.map(s => ({
+        sceneTitle: s.sceneTitle,
+        videoPrompt: s.videoPrompt,
+        status: 'pending',
+      })));
+      setIsGenerating(true); // Trigger asset generation
     } catch (error) {
       console.error(error);
       toast({
-        title: "Error Generating Video",
-        description: error instanceof Error ? error.message : "An unknown error occurred. Please try again.",
+        title: "Error Analyzing Concept",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsAnalyzing(false);
     }
   }
 
-  const printableContent = result ? `${result.title}\n\n${result.description}` : '';
+  async function generateAllScenes() {
+    if (!analysis) return;
+
+    for (let i = 0; i < analysis.scenes.length; i++) {
+      setScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'loading' } : s));
+      try {
+        const sceneResult = await generateConceptVideoScene({
+          videoPrompt: analysis.scenes[i].videoPrompt,
+        });
+        setScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'done', data: sceneResult } : s));
+      } catch (error) {
+        console.error(`Error generating scene ${i + 1}:`, error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        setScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'error', errorMessage } : s));
+        toast({ title: `Error in Scene ${i + 1}`, description: errorMessage, variant: "destructive" });
+      }
+    }
+    setIsGenerating(false);
+  }
+  
+  const loadingMessage = isAnalyzing 
+    ? "Analyzing Concept..." 
+    : isGenerating 
+      ? "Generating Video Scenes..."
+      : "Generate Multi-Step Video";
 
   return (
     <>
@@ -89,12 +111,12 @@ export function VideoGenerator() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="prompt"
+              name="concept"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Concept to Visualize in Video</FormLabel>
+                  <FormLabel>Complex Concept to Explain</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., The water cycle, cellular respiration..." {...field} rows={3} />
+                    <Textarea placeholder="e.g., The water cycle, cellular respiration, supply and demand..." {...field} rows={3} disabled={isAnalyzing || isGenerating} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,7 +130,7 @@ export function VideoGenerator() {
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Grade Level</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isAnalyzing || isGenerating}>
                         <FormControl>
                             <SelectTrigger>
                             <SelectValue placeholder="Select a grade" />
@@ -131,7 +153,7 @@ export function VideoGenerator() {
                     <FormItem>
                         <FormLabel>Subject</FormLabel>
                         <FormControl>
-                        <Input placeholder="e.g., Biology, History" {...field} />
+                        <Input placeholder="e.g., Biology, History" {...field} disabled={isAnalyzing || isGenerating} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -143,80 +165,60 @@ export function VideoGenerator() {
                 name="language"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Language for Title/Description</FormLabel>
+                    <FormLabel>Language</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Spanish, French, Japanese" {...field} />
+                      <Input placeholder="e.g., Spanish, French, Japanese" {...field} disabled={isAnalyzing || isGenerating} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            
-            <FormField
-              control={form.control}
-              name="image"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Optional Starting Image</FormLabel>
-                  <FormControl>
-                      <div className="flex items-center gap-4">
-                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                              <FileImage className="mr-2" /> Upload Image
-                          </Button>
-                          <Input 
-                              type="file" 
-                              ref={fileInputRef} 
-                              className="hidden" 
-                              accept="image/*"
-                              onChange={handleImageChange} 
-                          />
-                          {previewImage && <Image src={previewImage} alt="Preview" width={48} height={48} className="rounded-md object-cover" />}
-                      </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Video
+            <Button type="submit" disabled={isAnalyzing || isGenerating} className="w-full md:w-auto">
+              {isAnalyzing || isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loadingMessage}
             </Button>
           </form>
         </Form>
       </CardContent>
-      {(isLoading || result) && (
-        <CardFooter className="flex-col items-start space-y-4">
-            <h3 className="font-semibold text-lg">Generated Video:</h3>
-            {isLoading ? (
-                 <div className="w-full max-w-lg mx-auto space-y-4">
-                    <p className="text-center text-muted-foreground">Generating video... this may take a several minutes.</p>
-                    <div className="flex flex-col h-full p-4 border rounded-lg gap-4">
-                        <Skeleton className="w-full aspect-video rounded-md" />
-                        <Skeleton className="w-3/4 h-7" />
-                        <Skeleton className="w-full h-5" />
-                    </div>
-                </div>
-            ) : (
-              result && (
-                <div className="w-full max-w-lg mx-auto">
-                    <div className="flex flex-col h-full p-4 border rounded-lg bg-muted gap-4">
-                        <div className="relative w-full aspect-video mb-4 rounded-md overflow-hidden bg-black">
-                            <video controls src={result.videoUrl} className="w-full h-full object-contain" autoPlay muted>
-                                Your browser does not support the video tag.
-                            </video>
+
+      {analysis && (
+        <CardFooter className="flex-col items-start space-y-4 w-full">
+            <h3 className="text-2xl font-bold text-center w-full">{analysis.title}</h3>
+            
+            <Carousel opts={{ align: "start", loop: false }} className="w-full max-w-3xl mx-auto">
+                <CarouselContent>
+                {scenes.map((scene, index) => (
+                    <CarouselItem key={index}>
+                    <div className="p-1 h-full">
+                        <div className="flex flex-col h-full p-4 border rounded-lg bg-muted gap-4">
+                            <div className="relative w-full aspect-video rounded-md overflow-hidden bg-black/80 flex items-center justify-center">
+                                {scene.status === 'done' && scene.data?.videoUrl ? (
+                                    <video src={scene.data.videoUrl} className="w-full h-full object-contain" loop autoPlay muted>
+                                        Your browser does not support the video tag.
+                                    </video>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-4">
+                                        {scene.status === 'loading' && <Loader2 className="h-8 w-8 animate-spin text-primary" />}
+                                        {scene.status === 'error' && <p className="text-destructive-foreground text-sm">⚠️<br />{scene.errorMessage}</p>}
+                                        {scene.status === 'pending' && <p className="text-muted-foreground">Waiting...</p>}
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-base text-center font-medium text-foreground leading-relaxed h-12 overflow-y-auto p-1">
+                                {index + 1}. {scene.sceneTitle}
+                            </p>
                         </div>
-                        <h4 className="text-lg font-semibold">{result.title}</h4>
-                        <p className="text-sm text-foreground flex-1">
-                          {result.description}
-                        </p>
                     </div>
-                    <div className="mt-4 w-full flex justify-center">
-                        <OutputActions content={printableContent} title={result.title} />
-                    </div>
-                </div>
-              )
-            )}
+                    </CarouselItem>
+                ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+            </Carousel>
+             <div className="text-center text-sm text-muted-foreground w-full">
+                <p>Navigate through the video steps using the arrows.</p>
+            </div>
         </CardFooter>
       )}
     </>

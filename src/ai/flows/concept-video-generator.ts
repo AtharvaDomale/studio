@@ -2,11 +2,11 @@
 'use server';
 
 /**
- * @fileOverview An agent that generates a single concept video.
+ * @fileOverview An agent that generates a single concept video scene.
  *
- * - conceptVideoGenerator - A function that handles the concept video generation process.
- * - ConceptVideoGeneratorInput - The input type for the conceptVideoGenerator function.
- * - ConceptVideoGeneratorOutput - The return type for the conceptVideoGenerator function.
+ * - generateConceptVideoScene - A function that handles the concept video scene generation.
+ * - GenerateConceptVideoSceneInput - The input type for the function.
+ * - GenerateConceptVideoSceneOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -14,69 +14,37 @@ import {z} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {MediaPart} from 'genkit';
 
-const ConceptVideoGeneratorInputSchema = z.object({
-  prompt: z.string().describe('The prompt or topic to generate a video for.'),
-  grade: z.string().describe('The grade level of the students.'),
-  subject: z.string().describe('The subject of the topic.'),
-  language: z.string().describe('The language for the output.'),
-  image: z.string().optional().describe(
-    "An optional starting image for the video, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-  ),
+const GenerateConceptVideoSceneInputSchema = z.object({
+  videoPrompt: z.string().describe('A detailed prompt for the video generation model.'),
 });
-export type ConceptVideoGeneratorInput = z.infer<typeof ConceptVideoGeneratorInputSchema>;
+export type GenerateConceptVideoSceneInput = z.infer<typeof GenerateConceptVideoSceneInputSchema>;
 
-const ConceptVideoGeneratorOutputSchema = z.object({
-    title: z.string().describe('The title of the generated video.'),
-    description: z.string().describe('A brief description of the video content.'),
+const GenerateConceptVideoSceneOutputSchema = z.object({
     videoUrl: z.string().describe(
-        'The URL of the generated video, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'
+        'The URL of the generated video, as a data URI that must include a MIME type and use Base64 encoding.'
     ),
 });
-export type ConceptVideoGeneratorOutput = z.infer<typeof ConceptVideoGeneratorOutputSchema>;
+export type GenerateConceptVideoSceneOutput = z.infer<typeof GenerateConceptVideoSceneOutputSchema>;
 
-export async function conceptVideoGenerator(
-  input: ConceptVideoGeneratorInput
-): Promise<ConceptVideoGeneratorOutput> {
-  return conceptVideoGeneratorFlow(input);
+export async function generateConceptVideoScene(
+  input: GenerateConceptVideoSceneInput
+): Promise<GenerateConceptVideoSceneOutput> {
+  return generateConceptVideoSceneFlow(input);
 }
 
 
-const conceptVideoGeneratorFlow = ai.defineFlow(
+const generateConceptVideoSceneFlow = ai.defineFlow(
   {
-    name: 'conceptVideoGeneratorFlow',
-    inputSchema: ConceptVideoGeneratorInputSchema,
-    outputSchema: ConceptVideoGeneratorOutputSchema,
+    name: 'generateConceptVideoSceneFlow',
+    inputSchema: GenerateConceptVideoSceneInputSchema,
+    outputSchema: GenerateConceptVideoSceneOutputSchema,
   },
   async (input) => {
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Step 1: Generate a title and description
-    const titleAndDescResponse = await ai.generate({
-        prompt: `Create a concise title and a one-sentence description for an educational video about "${input.prompt}" for a ${input.grade} ${input.subject} student. The title and description must be in ${input.language}.`,
-        output: {
-            schema: z.object({
-                title: z.string(),
-                description: z.string(),
-            })
-        }
-    });
-
-    const { title, description } = titleAndDescResponse.output || { title: input.prompt, description: 'An educational video.' };
-
-    // Step 2: Generate the video
-    const videoPrompt: (string | MediaPart)[] = [
-        {
-            text: `A short, engaging, and educational video for a ${input.grade} student studying ${input.subject}. The video should visually represent this concept: "${input.prompt}". Style: vibrant, simple, and easy-to-understand for educational purposes.`
-        }
-    ];
-
-    if (input.image) {
-        videoPrompt.push({media: {url: input.image}});
-    }
-
     let {operation} = await ai.generate({
         model: googleAI.model('veo-2.0-generate-001'),
-        prompt: videoPrompt,
+        prompt: [{text: input.videoPrompt}],
         config: {
             durationSeconds: 8,
             aspectRatio: '16:9',
@@ -111,10 +79,7 @@ const conceptVideoGeneratorFlow = ai.defineFlow(
     const base64Video = Buffer.from(videoBuffer).toString('base64');
     const videoDataUrl = `data:video/mp4;base64,${base64Video}`;
 
-    // Step 3: Return the final combined output.
     return { 
-        title,
-        description,
         videoUrl: videoDataUrl
     };
   }
