@@ -13,5 +13,4 @@ import '@/ai/flows/story-analyzer.ts';
 import '@/ai/flows/scene-generator.ts';
 import '@/ai/flows/student-evaluator.ts';
 import '@/ai/flows/concept-analyzer.ts';
-import '@/ai/flows/research-agent.ts';
-
+import '@/ai/flows/academic-coordinator.ts';
