@@ -2,8 +2,9 @@
 import { Header } from '@/components/header';
 import { AcademicCoordinatorAgent } from '@/components/research-agent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Rss } from 'lucide-react';
+import { CalendarPlus, Mail, Rss } from 'lucide-react';
 import { GmailAssistant } from '@/components/gmail-assistant';
+import { CalendarAssistant } from '@/components/calendar-assistant';
 
 export default function AgentsPage() {
   return (
@@ -37,6 +38,18 @@ export default function AgentsPage() {
                 </CardHeader>
                 <CardContent>
                     <GmailAssistant />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-4">
+                    <CalendarPlus className="h-8 w-8 text-primary" />
+                    <div>
+                        <CardTitle>Calendar Assistant (via n8n Webhook)</CardTitle>
+                        <CardDescription>Provide an event description, and the agent will send it to your n8n webhook to create a calendar event.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <CalendarAssistant />
                 </CardContent>
             </Card>
         </div>

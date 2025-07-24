@@ -15,3 +15,4 @@ import '@/ai/flows/student-evaluator.ts';
 import '@/ai/flows/concept-analyzer.ts';
 import '@/ai/flows/academic-coordinator.ts';
 import '@/ai/flows/gmail-assistant.ts';
+import '@/ai/flows/calendar-assistant.ts';
