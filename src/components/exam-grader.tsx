@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Camera, Upload, Save } from "lucide-react";
+import { Loader2, Camera, Upload, Save, ScanLine } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
