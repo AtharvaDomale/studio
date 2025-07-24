@@ -1,3 +1,4 @@
+
 "use client";
 import { conceptVideoGenerator, ConceptVideoGeneratorOutput } from "@/ai/flows/concept-video-generator";
 import { Button } from "@/components/ui/button";
@@ -144,37 +145,6 @@ export function VideoGenerator() {
                 />
             </div>
             
-            <FormField
-              control={form.control}
-              name="model"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Generation Model</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex items-center space-x-4"
-                    >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="veo-2.0-generate-001" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Veo 2.0</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="veo-3.0-generate-preview" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Veo 3.0 (Experimental)</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <FormField
                 control={form.control}

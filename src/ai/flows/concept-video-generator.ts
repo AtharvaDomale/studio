@@ -76,12 +76,10 @@ const conceptVideoGeneratorFlow = ai.defineFlow(
         videoPrompt.push({media: {url: input.image}});
     }
 
-    const config: any = {};
-    // Conditionally add parameters based on model support
-    if (input.model === 'veo-2.0-generate-001') {
-      config.durationSeconds = input.duration;
-      config.aspectRatio = input.aspectRatio;
-    }
+    const config = {
+      durationSeconds: input.duration,
+      aspectRatio: input.aspectRatio,
+    };
 
     let {operation} = await ai.generate({
         model: googleAI.model(input.model as any),
@@ -125,4 +123,3 @@ const conceptVideoGeneratorFlow = ai.defineFlow(
     };
   }
 );
-
