@@ -16,8 +16,6 @@ import { z } from "zod";
 import { OutputActions } from "./output-actions";
 import Image from "next/image";
 import ReactMarkdown from 'react-markdown';
-import { LiveAgent } from "./live-agent";
-import { Separator } from "./ui/separator";
 
 const formSchema = z.object({
   content: z.string().min(10, { message: "Content must be at least 10 characters." }),
@@ -75,13 +73,6 @@ export function ExplainerTool() {
   return (
     <>
       <CardContent className="space-y-6">
-        <LiveAgent />
-
-        <div className="relative">
-            <Separator />
-            <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-card px-2 text-muted-foreground text-sm">OR</span>
-        </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <p className="text-sm text-muted-foreground">Get suggestions by providing a topic and other details below.</p>
