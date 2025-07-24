@@ -52,7 +52,7 @@ const gmailAssistantFlow = ai.defineFlow(
       model: 'googleai/gemini-1.5-flash-latest',
     });
 
-    const toolCalls = llmResponse.toolCalls();
+    const toolCalls = llmResponse.toolCalls;
     // If the model made a tool call, return the output of the first tool call.
     if (toolCalls.length > 0) {
       const toolOutput = toolCalls[0].output;
