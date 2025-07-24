@@ -18,8 +18,6 @@ const ConceptVideoGeneratorInputSchema = z.object({
   prompt: z.string().describe('The prompt or topic to generate a video for.'),
   grade: z.string().describe('The grade level of the students.'),
   subject: z.string().describe('The subject of the topic.'),
-  duration: z.number().min(5).max(8).default(5).describe('The duration of the video in seconds.'),
-  aspectRatio: z.enum(['16:9', '9:16']).default('16:9').describe('The aspect ratio of the video.'),
   image: z.string().optional().describe(
     "An optional starting image for the video, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
@@ -76,15 +74,9 @@ const conceptVideoGeneratorFlow = ai.defineFlow(
         videoPrompt.push({media: {url: input.image}});
     }
 
-    const config = {
-      durationSeconds: input.duration,
-      aspectRatio: input.aspectRatio,
-    };
-
     let {operation} = await ai.generate({
         model: googleAI.model(input.model as any),
         prompt: videoPrompt,
-        config: config,
     });
 
     if (!operation) {

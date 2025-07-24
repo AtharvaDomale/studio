@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,10 +21,8 @@ const formSchema = z.object({
   prompt: z.string().min(10, { message: "Prompt must be at least 10 characters." }),
   grade: z.string({ required_error: "Please select a grade level." }),
   subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
-  duration: z.number().min(5).max(8).default(5),
-  aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
   image: z.string().optional(),
-  model: z.string().default('veo-2.0-generate-001'),
+  model: z.string().default('veo-3.0-generate-preview'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -43,9 +39,7 @@ export function VideoGenerator() {
     defaultValues: { 
       prompt: "",
       subject: "",
-      duration: 5,
-      aspectRatio: "16:9",
-      model: "veo-2.0-generate-001",
+      model: "veo-3.0-generate-preview",
     },
   });
 
@@ -145,76 +139,26 @@ export function VideoGenerator() {
                 />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <FormField
-                control={form.control}
-                name="image"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Optional Starting Image</FormLabel>
-                    <FormControl>
-                        <div className="flex items-center gap-4">
-                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                <FileImage className="mr-2" /> Upload Image
-                            </Button>
-                            <Input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
-                                accept="image/*"
-                                onChange={handleImageChange} 
-                            />
-                            {previewImage && <Image src={previewImage} alt="Preview" width={48} height={48} className="rounded-md object-cover" />}
-                        </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Video Duration (sec): {field.value}</FormLabel>
-                    <FormControl>
-                      <Slider
-                        min={5}
-                        max={8}
-                        step={1}
-                        value={[field.value]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-             <FormField
+            <FormField
               control={form.control}
-              name="aspectRatio"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Aspect Ratio</FormLabel>
+              name="image"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Optional Starting Image</FormLabel>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex items-center space-x-4"
-                    >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="16:9" />
-                        </FormControl>
-                        <FormLabel className="font-normal">16:9 (Widescreen)</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="9:16" />
-                        </FormControl>
-                        <FormLabel className="font-normal">9:16 (Vertical)</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
+                      <div className="flex items-center gap-4">
+                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                              <FileImage className="mr-2" /> Upload Image
+                          </Button>
+                          <Input 
+                              type="file" 
+                              ref={fileInputRef} 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleImageChange} 
+                          />
+                          {previewImage && <Image src={previewImage} alt="Preview" width={48} height={48} className="rounded-md object-cover" />}
+                      </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
