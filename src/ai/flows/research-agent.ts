@@ -84,7 +84,7 @@ const academicResearchAgentFlow = ai.defineFlow(
     const searchResponse = await ai.generate({
       prompt: `Use the academic web search tool to find information about "${input.topic}".`,
       tools: [webSearchTool],
-      model: 'googleai/gemini-2.0-flash', // Specify a model that supports tool use.
+      model: 'gemini-2.5-pro', // Specify a model that supports tool use.
     });
     
     const searchResults = searchResponse.toolCalls(webSearchTool.name).map(call => call.output) as SearchResult[][];
