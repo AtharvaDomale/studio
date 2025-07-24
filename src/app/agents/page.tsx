@@ -2,17 +2,18 @@
 import { Header } from '@/components/header';
 import { AcademicCoordinatorAgent } from '@/components/research-agent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rss } from 'lucide-react';
+import { Mail, Rss } from 'lucide-react';
+import { GmailAssistant } from '@/components/gmail-assistant';
 
 export default function AgentsPage() {
   return (
     <div className="flex flex-col min-h-dvh bg-background">
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">AI Academic Coordinator</h1>
-                <p className="mt-4 text-lg text-muted-foreground">Your intelligent partner for in-depth academic research and analysis.</p>
+        <div className="max-w-4xl mx-auto grid gap-12">
+            <div className="text-center">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">AI Agent Hub</h1>
+                <p className="mt-4 text-lg text-muted-foreground">Your intelligent partners for complex tasks.</p>
             </div>
             <Card>
                 <CardHeader className="flex flex-row items-center gap-4">
@@ -24,6 +25,18 @@ export default function AgentsPage() {
                 </CardHeader>
                 <CardContent>
                     <AcademicCoordinatorAgent />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-4">
+                    <Mail className="h-8 w-8 text-primary" />
+                    <div>
+                        <CardTitle>Gmail Assistant (via n8n MCP)</CardTitle>
+                        <CardDescription>Use an agent that connects to an external n8n workflow to interact with your Gmail account.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <GmailAssistant />
                 </CardContent>
             </Card>
         </div>
