@@ -183,7 +183,7 @@ export function LiveAgent() {
             const base64Audio = Buffer.from(audioData).toString('base64');
             sessionRef.current.sendClientContent({
                 audio: [{ inlineData: { data: base64Audio, mimeType: 'audio/webm' } }]
-            }).catch(e => console.error("Error sending audio:", e));
+            });
         }
       };
       
@@ -199,7 +199,7 @@ export function LiveAgent() {
     mediaRecorderRef.current?.stop();
     // Signal end of user audio input if it's not the model signaling turn completion
     if (sessionRef.current && !isTurnComplete) {
-        sessionRef.current.sendClientContent({ turns: [] }).catch(e => console.error("Error ending turn:", e));
+        sessionRef.current.sendClientContent({ turns: [] });
     }
     setIsRecording(false);
   };
