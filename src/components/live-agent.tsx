@@ -22,8 +22,12 @@ export function LiveAgent() {
   useEffect(() => {
     return () => {
       // Cleanup on component unmount
-      sessionRef.current?.close();
-      mediaRecorderRef.current?.stop();
+      if (sessionRef.current) {
+        sessionRef.current.close();
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
         audioContextRef.current.close();
       }
@@ -145,7 +149,7 @@ export function LiveAgent() {
                     toast({ title: "Live Agent Error", description: e.message || 'An unknown error occurred with the AI.', variant: "destructive" });
                     stopSession();
                 },
-                onclose: (e: CloseEvent) => {
+                onclose: () => {
                     // This can be triggered by server or by client calling session.close()
                     setStatus("disconnected");
                 },
@@ -199,6 +203,7 @@ export function LiveAgent() {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
         mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current = null;
     }
     if (sessionRef.current) {
         sessionRef.current.close();
@@ -218,17 +223,17 @@ export function LiveAgent() {
   const getStatusInfo = () => {
     switch (status) {
       case "disconnected":
-        return { text: "Start Live Chat", icon: <Mic className="h-10 w-10" />, color: "text-foreground" };
+        return { text: "Start Live Chat", icon: <Mic className="h-10 w-10" />, color: "text-foreground", pulse: false };
       case "connecting":
-        return { text: "Connecting...", icon: <Loader2 className="h-10 w-10 animate-spin" />, color: "text-blue-500" };
+        return { text: "Connecting...", icon: <Loader2 className="h-10 w-10 animate-spin" />, color: "text-blue-500", pulse: false };
       case "connected":
-        return { text: "Listening... (Click to Stop)", icon: <MicOff className="h-10 w-10" />, color: "text-red-500" };
+        return { text: "Listening... (Click to Stop)", icon: <MicOff className="h-10 w-10" />, color: "text-red-500", pulse: true };
       case "error":
-        return { text: "Connection Error", icon: <ServerCrash className="h-10 w-10" />, color: "text-destructive" };
+        return { text: "Connection Error", icon: <ServerCrash className="h-10 w-10" />, color: "text-destructive", pulse: false };
     }
   };
 
-  const { text, icon, color } = getStatusInfo();
+  const { text, icon, color, pulse } = getStatusInfo();
 
   return (
     <div className="w-full p-4 border rounded-lg bg-muted flex flex-col items-center justify-center space-y-4 min-h-[250px]">
@@ -239,14 +244,14 @@ export function LiveAgent() {
       <button
         onClick={handleMicClick}
         disabled={status === 'connecting'}
-        className={`flex flex-col items-center justify-center p-6 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring ${color} disabled:opacity-50`}
+        className={`flex flex-col items-center justify-center p-6 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring ${color} disabled:opacity-50 ${pulse ? 'animate-pulse' : ''}`}
       >
         {icon}
         <span className="mt-2 text-sm font-medium">{text}</span>
       </button>
       {responseText && (
         <div className="w-full text-left text-sm space-y-2">
-            <p><strong className="text-green-600">Bot:</strong> {responseText}</p>
+            <p><strong className="text-primary">Bot:</strong> {responseText}</p>
         </div>
       )}
     </div>
