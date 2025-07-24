@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import ReactMarkdown from 'react-markdown';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList, Line, LineChart, Pie, PieChart } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList, Line, LineChart, Pie, PieChart, Cell } from "recharts";
 import { ChartConfig } from "./ui/chart";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -203,6 +203,9 @@ export function StudentDashboard() {
                   content={<ChartTooltipContent indicator="dot" />}
                 />
                 <Bar dataKey="averageScore" radius={8}>
+                   {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
                   <LabelList
                     position="top"
                     offset={12}
@@ -309,7 +312,7 @@ export function StudentDashboard() {
                     <Card key={student.id} className="flex flex-col text-center hover:shadow-lg transition-shadow duration-300">
                         <CardContent className="flex-grow flex flex-col items-center p-6">
                            <Avatar className="h-24 w-24 mb-4 border-4 border-muted">
-                             <AvatarImage src={student.avatar} alt={student.name} data-ai-hint="person student" />
+                             <AvatarImage src={student.avatar} alt={student.name} data-ai-hint="student person" />
                              <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                            </Avatar>
                            <h3 className="text-xl font-bold">{student.name}</h3>
