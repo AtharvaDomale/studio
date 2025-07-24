@@ -41,7 +41,7 @@ export function ExamGrader() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { className: "", examTopic: "", subject: "" },
+    defaultValues: { className: "", examTopic: "", subject: "", totalMarks: undefined },
   });
   
   useEffect(() => {
