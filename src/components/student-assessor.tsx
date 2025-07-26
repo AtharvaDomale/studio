@@ -1,7 +1,7 @@
 
 "use client";
-import { generateQuiz } from "@/ai/flows/student-quiz-generator";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { generateQuiz, GenerateQuizOutput, QuizQuestion } from "@/ai/flows/student-quiz-generator";
+import { evaluateStudentAnswers } from "@/ai/flows/student-performance-evaluator";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,14 +10,16 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle, FileImage, Loader2, Save } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { CheckCircle, FileImage, Loader2, XCircle } from "lucide-react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OutputActions } from "./output-actions";
 import { Input } from "./ui/input";
 import Image from "next/image";
-import { getStudents, saveQuizResult, Student } from "@/services/student-service";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import ReactMarkdown from "react-markdown";
+import { Skeleton } from "./ui/skeleton";
 
 const formSchema = z.object({
   topic: z.string().min(10, { message: "Topic must be at least 10 characters." }),
@@ -29,38 +31,18 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  answer: string;
-}
-
-interface QuizData {
-  questions: QuizQuestion[];
-}
+type AssessorState = 'idle' | 'generating' | 'taking' | 'evaluating' | 'report';
 
 export function StudentAssessor() {
-  const [quiz, setQuiz] = useState<QuizData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [state, setState] = useState<AssessorState>('idle');
+  const [quiz, setQuiz] = useState<GenerateQuizOutput | null>(null);
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [report, setReport] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<string>("");
-
-  useEffect(() => {
-    async function loadStudents() {
-      try {
-        const studentList = await getStudents();
-        setStudents(studentList);
-      } catch (error) {
-        console.error("Failed to fetch students", error);
-        toast({ title: "Error", description: "Could not load student list."});
-      }
-    }
-    loadStudents();
-  }, [toast]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -80,205 +62,145 @@ export function StudentAssessor() {
     }
   };
 
+  const handleAnswerChange = (questionIndex: number, answer: string) => {
+    setUserAnswers(prev => ({ ...prev, [questionIndex]: answer }));
+  };
 
-  async function onSubmit(data: FormValues) {
-    setIsLoading(true);
+  const allQuestionsAnswered = quiz ? Object.keys(userAnswers).length === quiz.questions.length : false;
+
+  async function handleGenerateQuiz(data: FormValues) {
+    setState('generating');
     setQuiz(null);
+    setReport(null);
+    setUserAnswers({});
     try {
       const output = await generateQuiz(data);
-      const parsedQuiz = JSON.parse(output.quiz);
-      setQuiz(parsedQuiz);
+      setQuiz(output);
+      setState('taking');
     } catch (error) {
       console.error(error);
       toast({
         title: "Error Generating Quiz",
-        description: "Failed to generate or parse the quiz. The AI might have returned an invalid format. Please try again.",
+        description: "Failed to generate the quiz. The AI might have returned an invalid format. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      setState('idle');
     }
   }
 
-  async function handleSaveResult() {
-    if (!selectedStudent) {
-        toast({ title: "Error", description: "Please select a student to save the result.", variant: "destructive" });
-        return;
-    }
+  async function handleAnalyzeAnswers() {
     if (!quiz) return;
-
-    setIsSaving(true);
+    setState('evaluating');
+    setIsSubmitting(true);
     try {
-        const student = students.find(s => s.id === selectedStudent);
-        if (!student) throw new Error("Student not found");
-
-        const quizName = form.getValues("topic");
-
-        await saveQuizResult(student.id, quizName, quiz);
-        toast({ title: "Success", description: `Quiz result saved for ${student.name}.` });
+        const { report: analysisReport } = await evaluateStudentAnswers({
+            quizQuestions: quiz.questions,
+            studentAnswers: quiz.questions.map((q, i) => userAnswers[i] || "Not Answered"),
+        });
+        setReport(analysisReport);
+        setState('report');
     } catch (error) {
-        console.error("Failed to save quiz result", error);
-        toast({ title: "Error", description: "Could not save the quiz result.", variant: "destructive" });
+        console.error("Error analyzing answers:", error);
+        toast({ title: "Error", description: "Failed to analyze the quiz answers.", variant: "destructive" });
+        setState('taking'); // Go back to the quiz
     } finally {
-        setIsSaving(false);
+        setIsSubmitting(false);
     }
   }
 
-  const printableContent = quiz ? quiz.questions.map((q, i) => `${i+1}. ${q.question}\nOptions: ${q.options.join(', ')}\nAnswer: ${q.answer}`).join('\n\n') : '';
+  const isLoading = state === 'generating' || state === 'evaluating';
 
   return (
     <>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="topic"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quiz Topic</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="e.g., The Solar System, World War II causes..." {...field} rows={3} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="gradeLevel"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Grade Level</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a grade" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
-                          <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="numberOfQuestions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Number of Questions: {field.value}</FormLabel>
-                    <FormControl>
-                      <Slider
-                        min={1}
-                        max={10}
-                        step={1}
-                        defaultValue={[field.value]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-             <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Language</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Spanish, French, Japanese" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-             <FormField
-              control={form.control}
-              name="image"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Optional Image</FormLabel>
-                  <FormControl>
-                      <div className="flex items-center gap-4">
-                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                              <FileImage className="mr-2" /> Upload Image
-                          </Button>
-                          <Input 
-                              type="file" 
-                              ref={fileInputRef} 
-                              className="hidden" 
-                              accept="image/*"
-                              onChange={handleImageChange} 
-                          />
-                          {previewImage && <Image src={previewImage} alt="Preview" width={48} height={48} className="rounded-md object-cover" />}
-                      </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Quiz
-            </Button>
-          </form>
-        </Form>
+        {state !== 'taking' && state !== 'report' && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleGenerateQuiz)} className="space-y-6">
+              <FormField control={form.control} name="topic" render={({ field }) => ( <FormItem> <FormLabel>Quiz Topic</FormLabel> <FormControl> <Textarea placeholder="e.g., The Solar System, World War II causes..." {...field} rows={3} disabled={isLoading} /> </FormControl> <FormMessage /> </FormItem> )} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="gradeLevel" render={({ field }) => ( <FormItem> <FormLabel>Grade Level</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a grade" /> </SelectTrigger> </FormControl> <SelectContent> {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => ( <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="numberOfQuestions" render={({ field }) => ( <FormItem> <FormLabel>Number of Questions: {field.value}</FormLabel> <FormControl> <Slider min={1} max={10} step={1} defaultValue={[field.value]} onValueChange={(value) => field.onChange(value[0])} disabled={isLoading} /> </FormControl> <FormMessage /> </FormItem> )} />
+              </div>
+              <FormField control={form.control} name="language" render={({ field }) => ( <FormItem> <FormLabel>Language</FormLabel> <FormControl> <Input placeholder="e.g., Spanish, French, Japanese" {...field} disabled={isLoading} /> </FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="image" render={() => ( <FormItem> <FormLabel>Optional Image</FormLabel> <FormControl> <div className="flex items-center gap-4"> <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading}> <FileImage className="mr-2" /> Upload Image </Button> <Input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} /> {previewImage && <Image src={previewImage} alt="Preview" width={48} height={48} className="rounded-md object-cover" />} </div> </FormControl> <FormMessage /> </FormItem> )} />
+              <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Generate Quiz
+              </Button>
+            </form>
+          </Form>
+        )}
       </CardContent>
 
-      {quiz?.questions && (
-        <CardFooter className="flex-col items-start gap-4">
+      <CardFooter className="flex-col items-start gap-4">
+        {state === 'generating' && (
+            <div className="w-full space-y-4">
+                <Skeleton className="h-8 w-1/3" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+            </div>
+        )}
+
+        {quiz && (state === 'taking' || state === 'evaluating' || state === 'report') && (
           <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">Generated Quiz</h3>
-            <Accordion type="single" collapsible className="w-full">
-              {quiz.questions.map((q, index) => (
-                <AccordionItem value={`item-${index}`} key={index}>
-                  <AccordionTrigger>{`Question ${index + 1}: ${q.question}`}</AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-2 pl-4">
-                      {q.options.map((option, i) => (
-                        <li key={i} className={`p-2 rounded-md flex items-center ${option === q.answer ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' : 'bg-muted/50'}`}>
-                           {option} {option === q.answer && <CheckCircle className="ml-auto h-5 w-5 text-green-600 dark:text-green-400" />}
-                        </li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            <h3 className="text-2xl font-bold mb-4 text-center">Quiz on {form.getValues("topic")}</h3>
+            <div className="space-y-6">
+                {quiz.questions.map((q, index) => (
+                    <div key={index} className={`p-4 rounded-lg border ${state === 'report' ? (userAnswers[index] === q.answer ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50') : 'bg-muted/50'}`}>
+                        <p className="font-semibold mb-3">{index + 1}. {q.question}</p>
+                        <RadioGroup onValueChange={(value) => handleAnswerChange(index, value)} value={userAnswers[index]} disabled={state !== 'taking'}>
+                            {q.options.map((option, i) => (
+                                <FormItem key={i} className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                        <RadioGroupItem value={option} />
+                                    </FormControl>
+                                    <FormLabel className="font-normal flex items-center gap-2">
+                                        {option}
+                                        {state === 'report' && option === q.answer && <CheckCircle className="h-5 w-5 text-green-600" />}
+                                        {state === 'report' && userAnswers[index] === option && option !== q.answer && <XCircle className="h-5 w-5 text-red-600" />}
+                                    </FormLabel>
+                                </FormItem>
+                            ))}
+                        </RadioGroup>
+                    </div>
+                ))}
+            </div>
+            {state === 'taking' && (
+                <Button onClick={handleAnalyzeAnswers} disabled={!allQuestionsAnswered || isSubmitting} className="mt-6 w-full md:w-auto">
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Submit Quiz for Analysis
+                </Button>
+            )}
           </div>
-          <div className="w-full space-y-4 pt-4 border-t">
-              <h3 className="text-md font-semibold">Save Quiz Result</h3>
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                  <Select onValueChange={setSelectedStudent} value={selectedStudent}>
-                      <SelectTrigger className="w-full md:w-[250px]">
-                          <SelectValue placeholder="Select a student..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                          {students.map(student => (
-                              <SelectItem key={student.id} value={student.id}>{student.name} - {student.className}</SelectItem>
-                          ))}
-                      </SelectContent>
-                  </Select>
-                  <Button onClick={handleSaveResult} disabled={isSaving || !selectedStudent}>
-                      {isSaving && <Loader2 className="mr-2 animate-spin" />}
-                      <Save className="mr-2" />
-                      Save Result for Student
-                  </Button>
-              </div>
-          </div>
-          <OutputActions content={printableContent} title="Quiz" />
-        </CardFooter>
-      )}
+        )}
+        
+        {state === 'evaluating' && (
+             <div className="w-full pt-6 border-t mt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center justify-center">
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Analyzing your answers...
+                </h3>
+                <div className="space-y-4">
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                </div>
+            </div>
+        )}
+
+        {state === 'report' && report && (
+             <div className="w-full pt-6 border-t mt-6">
+                <h3 className="text-2xl font-bold mb-4">Performance Report</h3>
+                <div className="prose dark:prose-invert max-w-none p-4 border rounded-lg bg-muted">
+                    <ReactMarkdown>{report}</ReactMarkdown>
+                </div>
+                <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                    <OutputActions content={report} title={`Quiz Report on ${form.getValues("topic")}`} />
+                    <Button variant="outline" onClick={() => setState('idle')}>Start a New Quiz</Button>
+                </div>
+            </div>
+        )}
+      </CardFooter>
     </>
   );
 }
-
-    
