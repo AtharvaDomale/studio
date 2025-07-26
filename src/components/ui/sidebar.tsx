@@ -139,13 +139,9 @@ const SidebarProvider = React.forwardRef<
       }),
       [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
     )
-    
-    if (typeof window === 'undefined') {
-        return null
-    }
 
     if (!isMounted) {
-      return null
+      return null;
     }
 
     return (
