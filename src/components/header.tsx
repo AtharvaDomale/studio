@@ -1,7 +1,7 @@
 
 "use client";
 
-import { BrainCircuit, Menu } from 'lucide-react';
+import { BookOpen, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { useSidebar } from './ui/sidebar';
 
@@ -13,8 +13,8 @@ export function Header() {
             <Menu className="h-6 w-6" />
         </button>
       <Link href="/" className="flex items-center justify-center" prefetch={false}>
-        <BrainCircuit className="h-6 w-6 text-primary" />
-        <span className="ml-3 text-xl font-bold font-headline text-foreground">TeachAI</span>
+        <BookOpen className="h-6 w-6 text-secondary" />
+        <span className="ml-3 text-xl font-bold font-headline text-foreground">Sahayak</span>
       </Link>
     </header>
   );
