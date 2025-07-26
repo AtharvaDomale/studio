@@ -14,7 +14,7 @@ import {z} from 'genkit';
 
 const WeeklyTeachingPlanInputSchema = z.object({
   teacherName: z.string().describe("The name of the teacher."),
-  teacherEmail: z.string().email().describe("The email address of the teacher."),
+  teacherEmail: z.string().describe("The email address of the teacher."),
   teacherAvailability: z.string().describe("The teacher's available time slots for the week."),
   subject: z.string().describe("The subject being taught."),
   className: z.string().describe("The class or grade level."),
@@ -43,7 +43,7 @@ const WeeklyTeachingPlanOutputSchema = z.object({
     .describe('A detailed weekly teaching plan in a human-readable Markdown format.'),
   jsonPlan: z.object({
       teacherName: z.string(),
-      teacherEmail: z.string().email(),
+      teacherEmail: z.string(),
       subject: z.string(),
       className: z.string(),
       week: z.array(DayPlanSchema),
