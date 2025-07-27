@@ -125,14 +125,15 @@ export function StudentAssessor() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Number of Questions: {field.value}</FormLabel>
-                        <Slider
-                          min={1}
-                          max={10}
-                          step={1}
-                          defaultValue={[field.value]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          disabled={isLoading}
-                        />
+                      <Slider
+                        min={1}
+                        max={10}
+                        step={1}
+                        defaultValue={[field.value]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                        disabled={isLoading}
+                        className="pt-2"
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -221,3 +222,5 @@ export function StudentAssessor() {
     </>
   );
 }
+
+    
