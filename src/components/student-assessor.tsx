@@ -125,7 +125,6 @@ export function StudentAssessor() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Number of Questions: {field.value}</FormLabel>
-                      <FormControl>
                         <Slider
                           min={1}
                           max={10}
@@ -134,7 +133,6 @@ export function StudentAssessor() {
                           onValueChange={(value) => field.onChange(value[0])}
                           disabled={isLoading}
                         />
-                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
