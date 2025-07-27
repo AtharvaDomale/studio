@@ -1,3 +1,4 @@
+
 "use client";
 
 import { generateWorksheets } from "@/ai/flows/worksheet-generator";
@@ -120,7 +121,7 @@ export function WorksheetGenerator() {
                     <Slider
                         min={1} max={5} step={1}
                         defaultValue={[field.value]}
-                        onValueChange={(value) => field.onChange(value[0])}
+                        onValueChange={(vals) => field.onChange(vals[0])}
                         disabled={isLoading}
                         className="pt-2"
                     />
