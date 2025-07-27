@@ -129,7 +129,7 @@ export function StudentAssessor() {
                         min={1}
                         max={10}
                         step={1}
-                        value={[field.value]}
+                        defaultValue={[field.value]}
                         onValueChange={(value) => field.onChange(value[0])}
                         disabled={isLoading}
                         className="pt-2"
