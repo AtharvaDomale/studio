@@ -16,7 +16,6 @@ import { z } from "zod";
 import { Skeleton } from "./ui/skeleton";
 import ReactMarkdown from 'react-markdown';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Slider } from "./ui/slider";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
 import { OutputActions } from "./output-actions";
 
@@ -24,7 +23,7 @@ const formSchema = z.object({
   grade: z.string({ required_error: "Please select a grade level." }),
   subject: z.string().min(2, "Subject is required."),
   language: z.string().min(2, "Language is required."),
-  worksheetCount: z.number().int().min(1).max(5).default(3),
+  worksheetCount: z.coerce.number().int().min(1).max(5).default(3),
   image: z.string({ required_error: "An image of the lesson is required." }),
 });
 
@@ -86,20 +85,22 @@ export function WorksheetGenerator() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField control={form.control} name="image" render={({ field }) => (
+            <FormField control={form.control} name="image" render={() => (
                 <FormItem>
                     <FormLabel>Lesson/Poem Image</FormLabel>
-                    <div className="flex flex-col gap-4 items-center justify-center p-4 border-2 border-dashed rounded-lg">
-                        {previewImage ? (
-                            <Image src={previewImage} alt="Lesson Preview" width={400} height={300} className="rounded-md object-contain max-h-60" />
-                        ) : (
-                            <div className="text-center text-muted-foreground">
-                                <Upload className="mx-auto h-12 w-12" />
-                                <p>Upload an image of the lesson or poem.</p>
-                            </div>
-                        )}
-                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}> <Upload className="mr-2" /> Upload Image</Button>
-                    </div>
+                    <FormControl>
+                        <div className="flex flex-col gap-4 items-center justify-center p-4 border-2 border-dashed rounded-lg">
+                            {previewImage ? (
+                                <Image src={previewImage} alt="Lesson Preview" width={400} height={300} className="rounded-md object-contain max-h-60" />
+                            ) : (
+                                <div className="text-center text-muted-foreground">
+                                    <Upload className="mx-auto h-12 w-12" />
+                                    <p>Upload an image of the lesson or poem.</p>
+                                </div>
+                            )}
+                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}> <Upload className="mr-2" /> Upload Image</Button>
+                        </div>
+                    </FormControl>
                     <Input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                     <FormMessage />
                 </FormItem>
@@ -112,22 +113,30 @@ export function WorksheetGenerator() {
 
             <FormField control={form.control} name="language" render={({ field }) => ( <FormItem><FormLabel>Language</FormLabel><FormControl><Input placeholder="e.g., Spanish, French, Japanese" {...field} /></FormControl><FormMessage /></FormItem> )} />
            
-             <FormField
-                control={form.control}
-                name="worksheetCount"
-                render={({ field }) => (
+            <FormField
+              control={form.control}
+              name="worksheetCount"
+              render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Number of Worksheets: {field.value}</FormLabel>
-                    <Slider
-                        min={1} max={5} step={1}
-                        value={[field.value]}
-                        onValueChange={(vals) => field.onChange(vals[0])}
-                        disabled={isLoading}
-                        className="pt-2"
-                    />
-                    <FormMessage />
+                  <FormLabel>Number of Worksheets</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={String(field.value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a count" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5].map(num => (
+                        <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
 
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">

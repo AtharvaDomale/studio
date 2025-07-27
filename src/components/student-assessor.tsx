@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +23,7 @@ import { Skeleton } from "./ui/skeleton";
 const formSchema = z.object({
   topic: z.string().min(10, { message: "Topic must be at least 10 characters." }),
   gradeLevel: z.string({ required_error: "Please select a grade level." }),
-  numberOfQuestions: z.number().min(1).max(10).default(5),
+  numberOfQuestions: z.coerce.number().int().min(1).max(10).default(5),
   language: z.string().min(2, { message: "Language is required."}),
   image: z.string().optional(),
 });
@@ -119,21 +118,24 @@ export function StudentAssessor() {
               <FormField control={form.control} name="topic" render={({ field }) => ( <FormItem> <FormLabel>Quiz Topic</FormLabel> <FormControl> <Textarea placeholder="e.g., The Solar System, World War II causes..." {...field} rows={3} disabled={isLoading} /> </FormControl> <FormMessage /> </FormItem> )} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="gradeLevel" render={({ field }) => ( <FormItem> <FormLabel>Grade Level</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a grade" /> </SelectTrigger> </FormControl> <SelectContent> {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => ( <SelectItem key={grade} value={`Grade ${grade}`}>Grade {grade}</SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
-                <FormField
+                 <FormField
                   control={form.control}
                   name="numberOfQuestions"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Number of Questions: {field.value}</FormLabel>
-                      <Slider
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[field.value]}
-                        onValueChange={(vals) => field.onChange(vals[0])}
-                        disabled={isLoading}
-                        className="pt-2"
-                      />
+                      <FormLabel>Number of Questions</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select number of questions" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
