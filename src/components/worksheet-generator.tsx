@@ -120,7 +120,7 @@ export function WorksheetGenerator() {
                     <FormLabel>Number of Worksheets: {field.value}</FormLabel>
                     <Slider
                         min={1} max={5} step={1}
-                        defaultValue={[field.value]}
+                        value={[field.value]}
                         onValueChange={(value) => field.onChange(value[0])}
                         disabled={isLoading}
                         className="pt-2"
@@ -177,5 +177,3 @@ export function WorksheetGenerator() {
     </>
   );
 }
-
-    
