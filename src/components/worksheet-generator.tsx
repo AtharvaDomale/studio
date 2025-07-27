@@ -3,7 +3,7 @@
 
 import { generateWorksheets } from "@/ai/flows/worksheet-generator";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -118,14 +118,13 @@ export function WorksheetGenerator() {
                 render={({ field }) => (
                 <FormItem>
                     <FormLabel>Number of Worksheets: {field.value}</FormLabel>
-                    <FormControl>
-                        <Slider
-                            min={1} max={5} step={1}
-                            defaultValue={[field.value]}
-                            onValueChange={(value) => field.onChange(value[0])}
-                            disabled={isLoading}
-                        />
-                    </FormControl>
+                    <Slider
+                        min={1} max={5} step={1}
+                        value={[field.value]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                        disabled={isLoading}
+                        className="pt-2"
+                    />
                     <FormMessage />
                 </FormItem>
                 )}
