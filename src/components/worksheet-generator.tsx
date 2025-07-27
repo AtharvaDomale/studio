@@ -78,7 +78,7 @@ export function WorksheetGenerator() {
     }
   }
   
-  const printableContent = result ? result.map(ws => `## ${ws.title} (${ws.type})\n\n${ws.content}`).join('\n\n---\n\n') : '';
+  const printableContent = result ? result.map(ws => `## ${ws.title} (${ws.type})\\n\\n${ws.content}`).join('\\n\\n---\\n\\n') : '';
 
   return (
     <>
