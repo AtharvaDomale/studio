@@ -1,5 +1,5 @@
 
-import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard, ScanLine, Rss, Mail, CalendarPlus } from 'lucide-react';
+import { BookOpen, Calendar, Image as ImageIcon, Video, FileQuestion, GraduationCap, Users, Clapperboard, ScanLine, Rss, Mail, CalendarPlus, FileText } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import React from 'react';
 
@@ -17,6 +17,7 @@ const AnimatedStorybook = dynamic(() => import('@/components/animated-storybook'
 const AcademicCoordinatorAgent = dynamic(() => import('@/components/research-agent').then(m => m.AcademicCoordinatorAgent));
 const GmailAssistant = dynamic(() => import('@/components/gmail-assistant').then(m => m.GmailAssistant));
 const CalendarAssistant = dynamic(() => import('@/components/calendar-assistant').then(m => m.CalendarAssistant));
+const WorksheetGenerator = dynamic(() => import('@/components/worksheet-generator').then(m => m.WorksheetGenerator));
 
 
 // A record to map tool IDs to their respective components and metadata
@@ -35,6 +36,7 @@ export const allTools: Record<string, {
   'assessor': { icon: FileQuestion, title: 'AI Student Assessor', description: 'Generate quizzes to gauge student understanding and provide feedback.', component: StudentAssessor, },
   'storybook-generator': { icon: GraduationCap, title: 'Storybook Generator', description: 'Create engaging and educational storybooks with AI illustrations.', component: StorybookGenerator, },
   'animated-storybook': { icon: Clapperboard, title: 'Animated Storybook', description: 'Turn any story into an animated video with narration and illustrations.', component: AnimatedStorybook, },
+  'worksheet-generator': { icon: FileText, title: 'AI Worksheet Generator', description: 'Upload an image of a lesson or poem to generate custom worksheets.', component: WorksheetGenerator, },
   'academic-coordinator': { icon: Rss, title: 'Multi-Agent Academic Research', description: 'Provide a topic, and the coordinator will orchestrate sub-agents to analyze it, find recent papers, and suggest future research directions.', component: AcademicCoordinatorAgent, },
   'gmail-assistant': { icon: Mail, title: 'Gmail Assistant', description: 'Use an agent that sends your prompt to an external n8n workflow to interact with your Gmail account.', component: GmailAssistant, },
   'calendar-assistant': { icon: CalendarPlus, title: 'Calendar Assistant', description: 'Provide an event description, and the agent will send it to your n8n webhook to create a calendar event.', component: CalendarAssistant, }

@@ -18,4 +18,6 @@ import '@/ai/flows/gmail-assistant.ts';
 import '@/ai/flows/calendar-assistant.ts';
 import '@/ai/flows/exam-grader.ts';
 import '@/ai/flows/student-performance-evaluator.ts';
+import '@/ai/flows/worksheet-generator.ts';
+
 

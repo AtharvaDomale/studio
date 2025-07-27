@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Sidebar, SidebarContent, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from '@/components/ui/sidebar';
 import { Header } from '@/components/header';
 import Link from 'next/link';
-import { BookOpen, BrainCircuit, LayoutDashboard, Rss, Wrench, Users, ScanLine, FileQuestion, GraduationCap, Clapperboard, Calendar, Video, ImageIcon, Mail, CalendarPlus } from 'lucide-react';
+import { BookOpen, BrainCircuit, LayoutDashboard, Rss, Wrench, Users, ScanLine, FileQuestion, GraduationCap, Clapperboard, Calendar, Video, ImageIcon, Mail, CalendarPlus, FileText } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export const metadata: Metadata = {
@@ -23,6 +23,7 @@ const tools = [
   { id: 'assessor', icon: FileQuestion, name: 'AI Student Assessor' },
   { id: 'storybook-generator', icon: GraduationCap, name: 'Storybook Generator' },
   { id: 'animated-storybook', icon: Clapperboard, name: 'Animated Storybook' },
+  { id: 'worksheet-generator', icon: FileText, name: 'Worksheet Generator' },
 ];
 
 const agents = [
@@ -43,7 +44,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet"></link>
       </head>
-      <body className="font-body antialiased" suppressHydrationWarning={true}>
+      <body className="font-body antialiased" suppressHydrationWarning>
         <SidebarProvider>
             <Sidebar>
                 <div className="flex flex-col h-full">
